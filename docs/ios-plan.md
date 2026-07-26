@@ -107,6 +107,22 @@ notifications lists them (`LocalNotifications.getPending()` via console or a deb
 Web regression: re-run the Phase A Playwright checks — index.html changes must not break
 Pages.
 
+### Phase B as built (deviations from the design above)
+
+- **Swift Package Manager, not CocoaPods.** CocoaPods can't be installed on this Mac
+  (system Ruby 2.6, no Homebrew; modern pod dependencies need Ruby ≥ 3.1). The project was
+  created with the Cap 7 SPM template, so there is **no `App.xcworkspace`** — open
+  `ios/App/App.xcodeproj` and build the `App` scheme. All five plugins ship a `Package.swift`.
+- **Keychain plugin: `capacitor-secure-storage-plugin` 0.12.0** (peer `@capacitor/core >= 7`).
+  `@aparajita/capacitor-secure-storage` is CocoaPods-only (no `Package.swift`) and its
+  current release peers on Capacitor 8, so it was ruled out.
+- `ios/App/CapApp-SPM/Package.swift` references plugins by **relative path into
+  `node_modules/`** — run `npm install` before opening Xcode on a fresh clone.
+- Added a safe-area fix: `.hud` now pads by `env(safe-area-inset-top)` (it rendered under
+  the Dynamic Island in the wrap; `env()` is 0 on the web, so Pages is unchanged).
+- Emoji render as tofu in the iOS Simulator — reproduced in the simulator's own Safari on
+  the same page, i.e. a simulator font-fallback quirk, not an app bug.
+
 ## Phase C — device install (Preston's Mac-side steps)
 
 Documented at the end of the session: open `ios/App/App.xcworkspace`, set the signing team,

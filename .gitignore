@@ -1,0 +1,21 @@
+# node
+node_modules/
+npm-debug.log*
+
+# generated Capacitor web dir (rebuilt by scripts/build-www.sh)
+www/
+
+# iOS build junk — the ios/ project itself IS committed
+ios/App/Pods/
+ios/App/Podfile.lock
+ios/App/build/
+ios/App/DerivedData/
+ios/App/App/public/
+ios/App/output/
+ios/capacitor-cordova-ios-plugins/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# macOS
+.DS_Store

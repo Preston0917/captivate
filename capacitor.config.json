@@ -1,0 +1,8 @@
+{
+  "appId": "com.preston.captivate",
+  "appName": "Captivate",
+  "webDir": "www",
+  "ios": {
+    "backgroundColor": "#12101c"
+  }
+}
