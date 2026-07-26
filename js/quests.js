@@ -60,6 +60,7 @@ const Quests = (() => {
     if (q.boss) s.weeklyBoss.done = true;
     Store.save();
 
+    Store.logRep();
     const leveled = Store.addXp(q.xp, q.skill);
     UI.xpToast(q.xp, leveled);
     checkBadges();

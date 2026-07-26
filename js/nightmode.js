@@ -183,6 +183,7 @@ const NightMode = (() => {
       finished = true;
     }
     Store.save();
+    Store.logRep();
     const leveled = Store.addXp(xp, "night");
     if (finished) {
       if (Store.awardBadge("called-shot")) {
@@ -316,6 +317,7 @@ const NightMode = (() => {
       n.current = null;
       n.nextAt = Date.now() + n.cfg.interval * 60 * 1000;
       Store.save();
+      Store.logRep();
       const leveled = Store.addXp(xp, "night");
       UI.xpToast(xp, leveled);
       if (n.combo >= 5 && Store.awardBadge("night-combo5")) {

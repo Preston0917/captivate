@@ -34,6 +34,9 @@ const Store = (() => {
     level: 1,
     totalXp: 0,
     streak: 0,
+    bestStreak: 0,             // never decreases, survives any lapse
+    freezes: 2,                // streak freezes: auto-granted, never bought
+    lastRepDay: null,          // "YYYY-MM-DD" of last REAL-WORLD rep
     lastActiveDay: null,       // "YYYY-MM-DD"
     questLog: {},              // questId -> { completedAt, day }
     dailyQuests: { day: null, ids: [], done: [] },
@@ -53,7 +56,11 @@ const Store = (() => {
     try {
       const raw = localStorage.getItem(KEY);
       if (!raw) return defaults();
-      return Object.assign(defaults(), JSON.parse(raw));
+      const loaded = Object.assign(defaults(), JSON.parse(raw));
+      // Migration for saves from before the rep-streak rework
+      if (loaded.bestStreak < loaded.streak) loaded.bestStreak = loaded.streak;
+      if (!loaded.lastRepDay && loaded.lastActiveDay) loaded.lastRepDay = loaded.lastActiveDay;
+      return loaded;
     } catch (e) {
       console.warn("save corrupted, starting fresh", e);
       return defaults();
@@ -93,22 +100,43 @@ const Store = (() => {
     };
   }
 
-  // ---------- streak ----------
-  function touchStreak() {
+  // ---------- rep streak ----------
+  // The 🔥 streak counts days with at least one REAL-WORLD rep (quest done,
+  // night action, goal check-in, Neon catch, Fade rung, gym part) — never
+  // app opens or in-app study. Missed days are covered silently by freezes.
+  function daysSince(dayKey) {
+    if (!dayKey) return Infinity;
+    return Math.round((Date.parse(todayKey()) - Date.parse(dayKey)) / 86400000);
+  }
+
+  function logRep() {
     const today = todayKey();
-    if (s.lastActiveDay === today) return;
-    const yesterday = (() => {
-      const d = new Date(Date.now() - 86400000);
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    })();
-    s.streak = s.lastActiveDay === yesterday ? s.streak + 1 : 1;
+    if (s.lastRepDay === today) return { counted: false, frozeUsed: 0 };
+    let frozeUsed = 0;
+    const gap = daysSince(s.lastRepDay);
+    if (!s.lastRepDay) {
+      s.streak = 1;
+    } else if (gap === 1) {
+      s.streak += 1;
+    } else if (gap - 1 <= s.freezes) {
+      // freezes silently cover the missed days; the chain holds
+      frozeUsed = gap - 1;
+      s.freezes -= frozeUsed;
+      s.streak += 1;
+    } else {
+      s.streak = 1;
+    }
+    s.lastRepDay = today;
     s.lastActiveDay = today;
+    s.bestStreak = Math.max(s.bestStreak, s.streak);
+    // earn a freeze back every 5-day stretch, capped at 3 — granted, never bought
+    if (s.streak % 5 === 0) s.freezes = Math.min(3, s.freezes + 1);
     save();
+    return { counted: true, frozeUsed };
   }
 
   // ---------- XP / levels ----------
   function addXp(amount, skillId) {
-    touchStreak();
     s.xp += amount;
     s.totalXp += amount;
     if (skillId) s.skillXp[skillId] = (s.skillXp[skillId] || 0) + amount;
@@ -137,8 +165,8 @@ const Store = (() => {
 
   return {
     get state() { return s; },
-    save, todayKey, weekKey, seededRandom,
-    addXp, xpForLevel, levelTitle, touchStreak, awardBadge,
+    save, todayKey, weekKey, seededRandom, daysSince,
+    addXp, xpForLevel, levelTitle, logRep, awardBadge,
     reset() { s = defaults(); save(); },
   };
 })();

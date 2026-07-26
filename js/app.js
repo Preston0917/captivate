@@ -114,7 +114,6 @@
   };
 
   // ---------- boot ----------
-  Store.touchStreak();
   UI.refreshHud();
   show("home");
 })();

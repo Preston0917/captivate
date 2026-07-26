@@ -233,6 +233,7 @@ var StoryMode = (() => {
     if (!n || d.catches[id]) return;
     d.catches[id] = { at: Date.now(), seenStage: 1 };
     Store.save();
+    Store.logRep();
     awardXp(StoryData.catchXp, n.skill);
     pushModal(done => catchModalNode(n, done));
   }
@@ -271,6 +272,7 @@ var StoryMode = (() => {
     if (!rung) return;
     d.rivals[rivalId] = { rung: rungKey, at: Date.now() };
     Store.save();
+    Store.logRep();
     awardXp(rung.xp, rv.skill);
     readBeat(rv.winBeat);
     pushModal(done => beatModalNode(rv.winBeat, "Keep going", done));
@@ -285,6 +287,7 @@ var StoryMode = (() => {
     if (!rung) return;
     d.rivals[id] = { rung: rungKey, at: Date.now() };
     Store.save();
+    Store.logRep();
     awardXp(rung.xp, ah.skill);
     UI.toast("Logged. Fade takes the night off.");
     redraw();
@@ -311,6 +314,7 @@ var StoryMode = (() => {
     if (d.regionsCompleted.indexOf(gym.region) < 0) d.regionsCompleted.push(gym.region);
     Store.save();
     Store.awardBadge(gym.badge);                       // counts in the global badge list
+    Store.logRep();
     awardXp(gym.rewardXp, gym.rewardSkill);
     readBeat(gym.winBeat);
     view = "journey";

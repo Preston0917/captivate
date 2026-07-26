@@ -34,7 +34,8 @@ const UI = (() => {
     document.getElementById("hud-xpbar").style.width =
       Math.min(100, (s.xp / Store.xpForLevel(s.level)) * 100) + "%";
     const streakEl = document.getElementById("hud-streak");
-    streakEl.textContent = `🔥 ${s.streak}`;
+    streakEl.textContent = `🔥 ${s.streak}` + (s.freezes > 0 ? ` 🧊${s.freezes}` : "");
+    streakEl.title = `Rep streak: days with at least one real-world rep. Best ever: ${s.bestStreak}. Freezes cover missed days automatically.`;
     streakEl.classList.toggle("hot", s.streak >= 3);
   }
 
