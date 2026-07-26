@@ -340,3 +340,34 @@ h2.pane-title { font-size: 1.25rem; margin-bottom: 4px; }
   .badge-grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
   .stat-grid { grid-template-columns: repeat(4, 1fr); }
 }
+
+/* ---------- Quest how-to modal ---------- */
+.hidden { display: none !important; }
+.howto-steps {
+  margin: 4px 0 6px 20px; padding: 0;
+  font-size: 0.88rem; line-height: 1.55; color: var(--ink);
+}
+.howto-steps li { margin-bottom: 8px; }
+.howto-steps li::marker { color: var(--gold); font-weight: 800; }
+.say-chip {
+  background: var(--bg-2); border: 1px solid var(--card-edge);
+  border-left: 3px solid var(--good);
+  border-radius: 10px; padding: 9px 12px; margin-bottom: 7px;
+  font-size: 0.86rem; line-height: 1.45; font-style: italic; color: var(--ink-dim);
+}
+.demo-box {
+  margin-top: 12px; padding: 16px 12px;
+  background: var(--bg-2); border: 1px solid var(--card-edge); border-radius: 12px;
+  color: var(--gold);
+  animation: fadein .25s ease;
+}
+.demo-caption {
+  margin-top: 10px; font-size: 0.78rem; line-height: 1.5;
+  color: var(--ink-dim); text-align: center;
+}
+.photo-link {
+  display: inline-block; margin-top: 12px;
+  font-size: 0.82rem; font-weight: 700; color: var(--comp);
+  text-decoration: none;
+}
+.photo-link:hover { text-decoration: underline; }

@@ -1114,7 +1114,19 @@ var CaptivateContent = {
       minLevel: 1,
       skill: "cap-control",
       source: "Captivate Ch.1",
-      tip: "Thrive/survive first: list 3-5 settings you dread. Pick the next invite from that list and pass on it guilt-free — no hack works in survival mode."
+      tip: "Thrive/survive first: list 3-5 settings you dread. Pick the next invite from that list and pass on it guilt-free — no hack works in survival mode.",
+      how: [
+        "Scan your upcoming invites and mark which ones you genuinely dread — those are your survive settings.",
+        "Pick one dreaded event this week that you don't truly have to attend.",
+        "Decline it early, warmly, and briefly — the sooner you pass, the easier it lands for everyone.",
+        "Notice the wave of relief afterward; write down what you did with the reclaimed time and energy.",
+        "Spend that saved energy in a setting where you actually shine — that trade is the whole point."
+      ],
+      examples: [
+        "Thanks for the invite — I'm going to sit this one out.",
+        "I can't make it that night, but have an amazing time.",
+        "Appreciate you thinking of me! I'm keeping this weekend low-key."
+      ]
     },
     // --- Chapter 2: Capture ---
     {
@@ -1128,7 +1140,16 @@ var CaptivateContent = {
       axis: "comp",
       skill: "cap-capture",
       source: "Captivate Ch.2",
-      tip: "Shoulders down and back, chin level, hands visible, space between arms and torso. Waiting rooms and elevators are where the slump sneaks in."
+      tip: "Shoulders down and back, chin level, hands visible, space between arms and torso. Waiting rooms and elevators are where the slump sneaks in.",
+      how: [
+        "Before you walk into any room today, stop and reset: roll your shoulders up, back, and down.",
+        "Keep your chin level and chest open — imagine a string pulling the crown of your head toward the ceiling.",
+        "Leave visible daylight between your arms and torso, and keep both hands out of your pockets.",
+        "Catch yourself hunched over your phone at least once today — raise the phone up and out instead of bowing your head down to it.",
+        "Success feels like taking up a little more space than usual and getting faster smiles and hellos back."
+      ],
+      demo: "launch-stance",
+      search: "confident open posture standing shoulders back"
     },
     {
       id: "cap-q-gaze",
@@ -1142,7 +1163,16 @@ var CaptivateContent = {
       axis: "warm",
       skill: "cap-capture",
       source: "Captivate Ch.2",
-      tip: "The eye-color trick makes the percentage happen naturally. More gaze while listening (75%) than talking (41%) is the normal rhythm."
+      tip: "The eye-color trick makes the percentage happen naturally. More gaze while listening (75%) than talking (41%) is the normal rhythm.",
+      how: [
+        "In your next conversation, aim to meet their eyes about two-thirds of the time — more while you listen, a bit less while you talk.",
+        "Use the color trick: quietly work out each person's exact eye color; it produces the right amount of gaze without staring.",
+        "When you break gaze, glance to the side — never over their shoulder, which reads as hunting for someone better.",
+        "Repeat in three separate conversations and log each person's eye color as your proof.",
+        "Success feels like the conversation warming up without either of you being able to say why."
+      ],
+      demo: "eye-contact",
+      search: "natural eye contact conversation two people"
     },
     // --- Chapter 3: Spark ---
     {
@@ -1156,7 +1186,20 @@ var CaptivateContent = {
       axis: "warm",
       skill: "cap-spark",
       source: "Captivate Ch.3",
-      tip: "Top three tested: \"What was the highlight of your day?\", \"What passion project are you working on?\", \"Anything exciting coming up in your life?\""
+      tip: "Top three tested: \"What was the highlight of your day?\", \"What passion project are you working on?\", \"Anything exciting coming up in your life?\"",
+      how: [
+        "Pick one sparker below and say it out loud once beforehand so it comes out naturally.",
+        "Next time you'd normally default to \"what do you do?\", swap in the sparker instead.",
+        "If it feels bold, name it — telling someone you're testing better questions is itself a fun opener.",
+        "Watch their face: a beat of pause, then a lit-up answer means you knocked them off autopilot — that's the win.",
+        "Log what they said and how differently the conversation ran."
+      ],
+      examples: [
+        "What was the best part of your day so far?",
+        "Are you working on anything you're actually excited about right now?",
+        "Got anything fun coming up?",
+        "Okay, real question — what's your story?"
+      ]
     },
     {
       id: "cap-q-hotbutton",
@@ -1170,7 +1213,21 @@ var CaptivateContent = {
       axis: "warm",
       skill: "cap-spark",
       source: "Captivate Ch.3",
-      tip: "Cues to count: leaning in, longer replies, eyebrow raise, \"tell me more,\" bigger gestures. Probe with \"You mentioned...\" and \"I was curious about...\""
+      tip: "Cues to count: leaning in, longer replies, eyebrow raise, \"tell me more,\" bigger gestures. Probe with \"You mentioned...\" and \"I was curious about...\"",
+      how: [
+        "Open with a couple of light topics and watch which one makes them come alive.",
+        "Know the tells: they lean toward you, answers get longer, eyebrows pop, hands start moving, voice speeds up.",
+        "When you spot one, dig in — ask how they got into it, what they love about it, what's next.",
+        "Quote them back (\"you mentioned...\") so they know you're actually listening, then ask for the backstory.",
+        "Count three engagement cues on a single topic and you've found the button — stay on it."
+      ],
+      examples: [
+        "Wait, you mentioned you DJ on the side — how did that start?",
+        "You lit up when you said Tokyo. Tell me about that trip.",
+        "Okay, I'm curious — what got you into that in the first place?"
+      ],
+      demo: "lean-in",
+      search: "leaning in engaged conversation body language"
     },
     // --- Chapter 4: Highlight ---
     {
@@ -1185,7 +1242,19 @@ var CaptivateContent = {
       axis: "warm",
       skill: "cap-highlight",
       source: "Captivate Ch.4",
-      tip: "Formula: name + genuine rave + conversation tee-up. \"Meet Dave — he's killing it in software and just had a huge launch.\""
+      tip: "Formula: name + genuine rave + conversation tee-up. \"Meet Dave — he's killing it in software and just had a huge launch.\"",
+      how: [
+        "Pick two pairs of people who would genuinely get something out of knowing each other.",
+        "Before each intro, decide on one true, specific thing that impresses you about each person.",
+        "Deliver it as name, then the genuine rave, then a topic hook the two of them can run with.",
+        "Keep every word honest — hype that isn't true reads as fake within seconds.",
+        "Step back and let them talk; if the conversation takes off without you, you've won."
+      ],
+      examples: [
+        "Maya, meet Jordan — he throws the best rooftop parties in the city, his last one sold out in a day.",
+        "You two have to talk — Sam just launched a clothing line, and Alex literally shoots streetwear for a living.",
+        "This is Dani, the most organized human I know — she basically ran our entire tour last month."
+      ]
     },
     {
       id: "cap-q-goldstar",
@@ -1199,7 +1268,19 @@ var CaptivateContent = {
       axis: "warm",
       skill: "cap-highlight",
       source: "Captivate Ch.4",
-      tip: "\"Thank goodness you're here — you're so knowledgeable.\" Match excitement too: good feelings multiply when matched, divide when unmatched."
+      tip: "\"Thank goodness you're here — you're so knowledgeable.\" Match excitement too: good feelings multiply when matched, divide when unmatched.",
+      how: [
+        "Pick three people you'll see today and spot one real strength in each — something you've actually witnessed.",
+        "Say it to them directly and specifically; vague compliments bounce off, specific ones stick.",
+        "Frame it as an identity, not just praise for one act — name who they ARE (\"you're the reliable one\").",
+        "When someone shares good news, match their energy fully instead of downplaying it.",
+        "Watch the next few days — people have a way of growing into the labels you hand them."
+      ],
+      examples: [
+        "You know literally everyone here — you're a natural connector.",
+        "Honestly, you're the person I trust most to get this right.",
+        "That's huge — congrats, I'm genuinely hyped for you!"
+      ]
     },
     // --- Chapter 5: Intrigue ---
     {
@@ -1213,7 +1294,19 @@ var CaptivateContent = {
       axis: "warm",
       skill: "cap-intrigue",
       source: "Captivate Ch.5",
-      tip: "Sweep the three categories: People (\"How do you know the host?\"), Context (\"Been to this before?\"), Interests (the richest). Never say \"Not me!\" — just keep scrolling."
+      tip: "Sweep the three categories: People (\"How do you know the host?\"), Context (\"Been to this before?\"), Interests (the richest). Never say \"Not me!\" — just keep scrolling.",
+      how: [
+        "In your next conversation with someone new, start a silent clock: three shared things, three minutes.",
+        "Sweep three categories in turn — mutual people, the situation you're both standing in, and personal interests.",
+        "When you hit a match, say it out loud with energy, then pull the thread with a follow-up question.",
+        "If a topic misses, never announce the mismatch — just pivot smoothly to the next thread.",
+        "Three genuine same-here moments in three minutes is the fastest bond you can build from scratch."
+      ],
+      examples: [
+        "No way, you know Marco too? How'd you two meet?",
+        "First time at this venue? Same — how'd you hear about tonight?",
+        "Wait, you're into that too? Okay, we're friends now."
+      ]
     },
     {
       id: "cap-q-tie",
@@ -1226,7 +1319,19 @@ var CaptivateContent = {
       axis: "warm",
       skill: "cap-intrigue",
       source: "Captivate Ch.5",
-      tip: "Intros, recipes, tickets, a link, a name. Sincere only — never offer help you can't deliver. Delivery is what converts a thread into a tie."
+      tip: "Intros, recipes, tickets, a link, a name. Sincere only — never offer help you can't deliver. Delivery is what converts a thread into a tie.",
+      how: [
+        "Near the end of a good conversation, listen for something they actually need — an intro, a spot, a link, a name.",
+        "Offer only what you can genuinely deliver, and be specific about exactly what you'll do.",
+        "Close by asking directly whether there's anything you can help with.",
+        "Get their contact and send the thing within 48 hours — the follow-through IS the quest.",
+        "Success is their surprised \"wow, you actually did it\" reply."
+      ],
+      examples: [
+        "Is there anything I can help you with?",
+        "I know the manager there — want me to make an intro?",
+        "I'll text you that promoter's number tonight."
+      ]
     },
     // --- Chapter 6: Decode ---
     {
@@ -1240,7 +1345,16 @@ var CaptivateContent = {
       minLevel: 3,
       skill: "cap-decode",
       source: "Captivate Ch.6",
-      tip: "Reality-show reaction shots are a goldmine. Slow-mo replays count double — that's literally how Ekman found Mary's hidden despair."
+      tip: "Reality-show reaction shots are a goldmine. Slow-mo replays count double — that's literally how Ekman found Mary's hidden despair.",
+      how: [
+        "Put on a drama or unscripted reality episode — reaction shots are where faces leak the truth.",
+        "Watch faces instead of following dialogue, and hunt for flashes that last under a second.",
+        "Name each flash you catch: pinched-brow anger, the one-sided contempt smirk, wide-eyed flat-brow fear, round-brow dropped-jaw surprise, crinkled-nose disgust, pulled-down-mouth sadness, or a real crow's-feet smile.",
+        "Pause and rewind anything you can't call — frame-by-frame makes the flash obvious.",
+        "Tally five you can confidently name, noting whether each matched what the person was saying out loud."
+      ],
+      demo: "microexpressions",
+      search: "seven universal microexpressions chart faces"
     },
     {
       id: "cap-q-congruency",
@@ -1253,7 +1367,21 @@ var CaptivateContent = {
       axis: "warm",
       skill: "cap-decode",
       source: "Captivate Ch.6",
-      tip: "\"I'm fine\" + anger flash = opportunity to explore. Sadness gets empathy; fear gets \"there must be more — how can I help?\""
+      tip: "\"I'm fine\" + anger flash = opportunity to explore. Sadness gets empathy; fear gets \"there must be more — how can I help?\"",
+      how: [
+        "This week, listen for a mismatch: someone's words say one thing while their face flashes another.",
+        "Trust the flash over the words — anything under a second is involuntary, so it's the honest signal.",
+        "Don't call them out or play detective; respond to the feeling instead by gently opening a door.",
+        "Match your response to the emotion: sadness gets empathy, fear gets reassurance, anger gets calm curiosity about the source.",
+        "Success is them exhaling and telling you what's actually going on."
+      ],
+      examples: [
+        "You said you're fine, but you seem a little off — what's up?",
+        "Hey, no judgment — is something about this bugging you?",
+        "You don't sound thrilled. Want to talk it through?"
+      ],
+      demo: "microexpressions",
+      search: "contempt smirk vs half smile facial expression"
     },
     // --- Chapter 7: Solve ---
     {
@@ -1266,7 +1394,18 @@ var CaptivateContent = {
       minLevel: 3,
       skill: "cap-solve",
       source: "Captivate Ch.7",
-      tip: "Rank each trait high/low/middle; your personal and professional matrices may legitimately differ. Middles are normal."
+      tip: "Rank each trait high/low/middle; your personal and professional matrices may legitimately differ. Middles are normal.",
+      how: [
+        "Rate yourself high, low, or middle on each of the five traits: appetite for novelty, love of plans and details, energy from crowds, default agreeableness, and tendency to worry.",
+        "Rate your work self and your social self separately if they honestly differ — that's normal.",
+        "Ask someone who knows you well to rate you on the same five without seeing your answers.",
+        "Compare the two sets — every gap is a place where your self-image and the signal you send don't match.",
+        "Don't chase a flattering map; the accurate one is the useful one, and middles count."
+      ],
+      examples: [
+        "Random question — am I more of a planner or a wing-it person, honestly?",
+        "Be real with me: do I come off as a worrier?"
+      ]
     },
     {
       id: "cap-q-speedread5",
@@ -1278,7 +1417,19 @@ var CaptivateContent = {
       minLevel: 3,
       skill: "cap-solve",
       source: "Captivate Ch.7",
-      tip: "Probes: vacations (openness), \"what's the plan?\" (conscientiousness), \"know anyone here?\" (extroversion), \"are you the peacemaker?\" (agreeableness), \"how's your week?\" (neuroticism). \"Have you heard of the Big Five?\" is itself a great sparker."
+      tip: "Probes: vacations (openness), \"what's the plan?\" (conscientiousness), \"know anyone here?\" (extroversion), \"are you the peacemaker?\" (agreeableness), \"how's your week?\" (neuroticism). \"Have you heard of the Big Five?\" is itself a great sparker.",
+      how: [
+        "List the five most important people in your life.",
+        "For each, guess high, low, or middle on all five traits using what you've already seen: how they vacation, plan, socialize, argue, and handle stress.",
+        "Test your guesses with casual probes — questions about weekend plans, new restaurants, and how their week is going reveal traits without an interrogation.",
+        "Pick one person and verify directly: bring up personality types as a fun topic and compare notes.",
+        "Write down one mismatch between your style and each person's, plus one way you'll flex for it."
+      ],
+      examples: [
+        "Are you a same-vacation-spot-every-year person or a new-country-every-time person?",
+        "So what's the plan for Saturday — or are we winging it?",
+        "Have you ever done one of those big personality tests? I just did mine and it was scary accurate."
+      ]
     },
     // --- Chapter 8: Appreciate ---
     {
@@ -1291,7 +1442,19 @@ var CaptivateContent = {
       minLevel: 3,
       skill: "cap-appreciate",
       source: "Captivate Ch.8",
-      tip: "Decode via history: \"best gift you've ever received?\", \"how did your family celebrate birthdays?\" How they treat favorites is how they want to be treated."
+      tip: "Decode via history: \"best gift you've ever received?\", \"how did your family celebrate birthdays?\" How they treat favorites is how they want to be treated.",
+      how: [
+        "Find your own top two first: of spoken praise, gifts, physical touch, favors done for you, and undivided time — which two actually make you feel valued?",
+        "For your partner, best friend, and boss, watch how they treat THEIR favorite people — we tend to give appreciation the way we want to receive it.",
+        "Probe with history questions about best gifts, family celebrations, and the nicest thing anyone's ever done for them.",
+        "Write down a primary and a secondary guess for each of the three people.",
+        "Verify one guess by acting on it and watching whether their face genuinely lights up."
+      ],
+      examples: [
+        "What's the best gift anyone's ever given you?",
+        "How did your family do birthdays growing up?",
+        "When you crush something at work, how do you actually like to celebrate?"
+      ]
     },
     {
       id: "cap-q-threeacts",
@@ -1305,7 +1468,18 @@ var CaptivateContent = {
       axis: "warm",
       skill: "cap-appreciate",
       source: "Captivate Ch.8",
-      tip: "Watch their microexpression as it lands: genuine happiness = right language; polite nothing = wrong language, adjust. Novelty upgrade: the hike instead of coffee, the care package instead of a card."
+      tip: "Watch their microexpression as it lands: genuine happiness = right language; polite nothing = wrong language, adjust. Novelty upgrade: the hike instead of coffee, the care package instead of a card.",
+      how: [
+        "Take your decoded guesses and pick one act per person, in THEIR language — not the one that comes naturally to you.",
+        "Add a novelty twist so it doesn't feel generic: the inside-joke gift, the activity instead of the usual coffee, the surprise assist on the thing they've been dreading.",
+        "Deliver each act this week, in person where you can.",
+        "Watch the first second of their reaction — a real smile with crinkled eyes means you nailed the language; a polite flat thanks means switch languages next time.",
+        "Log which language landed for each person and update their profile in your head."
+      ],
+      examples: [
+        "I remembered you said you were slammed, so I handled the guest list for you.",
+        "Saw this and thought of you — no occasion, just felt right."
+      ]
     },
     // --- Chapter 9: Value ---
     {
@@ -1318,7 +1492,14 @@ var CaptivateContent = {
       minLevel: 3,
       skill: "cap-value",
       source: "Captivate Ch.9",
-      tip: "Love, Service, Status, Money, Goods, Information. Be honest — Money and Love are the shame-prone ones. What keeps you up at night is the tell."
+      tip: "Love, Service, Status, Money, Goods, Information. Be honest — Money and Love are the shame-prone ones. What keeps you up at night is the tell.",
+      how: [
+        "Learn the six currencies people trade in: belonging and affection, being helped, status and credit, money, possessions, and inside information.",
+        "For each one, score yourself 0-2 on how much gaining it makes an interaction feel like a win.",
+        "Run the scoring three times — work life, social life, romantic life — because the answers often differ by domain.",
+        "Cross-check against your worries: whatever keeps you up at night usually points straight at your real primary.",
+        "Name a primary and secondary value per domain, and be honest about the uncomfortable ones — those are usually the true ones."
+      ]
     },
     {
       id: "cap-q-riservalue",
@@ -1331,7 +1512,18 @@ var CaptivateContent = {
       axis: "warm",
       skill: "cap-value",
       source: "Captivate Ch.9",
-      tip: "Status → public credit; Information → tell them first; Service → help before they ask. Motivate to THEIR value, never yours."
+      tip: "Status → public credit; Information → tell them first; Service → help before they ask. Motivate to THEIR value, never yours.",
+      how: [
+        "Pick the one relationship you most want to level up — that person is your target.",
+        "For a week, listen to their complaints and brags: feeling underpaid, unrecognized, or out of the loop each points at a different currency.",
+        "Match what you heard to one of the six currencies and commit to a guess at their primary.",
+        "Do one concrete thing this week that feeds it: public credit for a status person, first-to-know news for an information person, unprompted help for a service person.",
+        "Watch the reaction — a genuinely lit-up response confirms the read; a shrug means re-decode and try again."
+      ],
+      examples: [
+        "Before it's announced anywhere — I wanted you to hear it from me first.",
+        "Everyone should know Chris built this entire thing — take a bow."
+      ]
     },
     // --- Chapter 10: Connect ---
     {
@@ -1344,7 +1536,19 @@ var CaptivateContent = {
       minLevel: 3,
       skill: "cap-connect",
       source: "Captivate Ch.10",
-      tip: "Trigger topics: weather, commute, weekends, TV, work. Stories don't need to be originals — collect the good ones you hear."
+      tip: "Trigger topics: weather, commute, weekends, TV, work. Stories don't need to be originals — collect the good ones you hear.",
+      how: [
+        "List five topics that surface in almost every conversation — commute, weekend, work, shows, food.",
+        "For each topic, dig up one short true story you can tell in under two minutes — yours, or a great one you heard.",
+        "Give every story a hook up front and one moment of tension or stakes in the middle.",
+        "Write one boomerang question per story that hands the mic back and invites theirs.",
+        "Save all five in your phone — the stack only works if it's loaded before you need it."
+      ],
+      examples: [
+        "What's the weirdest thing you've ever seen on the way to work?",
+        "Please tell me you've had a worse Monday than that.",
+        "Have you ever met someone famous and completely blown it?"
+      ]
     },
     {
       id: "cap-q-storypolish",
@@ -1357,7 +1561,18 @@ var CaptivateContent = {
       axis: "comp",
       skill: "cap-connect",
       source: "Captivate Ch.10",
-      tip: "Hook first (\"...after I humiliated myself in front of him, I could never watch him the same way\"). Keep it under two minutes; end with a boomerang."
+      tip: "Hook first (\"...after I humiliated myself in front of him, I could never watch him the same way\"). Keep it under two minutes; end with a boomerang.",
+      how: [
+        "Pick an anecdote you tell that usually lands flat.",
+        "Rewrite the first line as a hook — a question or bold claim that makes people need the rest.",
+        "Find the struggle: what went wrong, what was at risk, who almost blew it. Tension is the engine of every good story.",
+        "Swap three bland words for vivid sensory ones your listener can see, hear, or smell.",
+        "Tell the new version to a friend in under two minutes, end with a question back to them, and note the difference in their reaction."
+      ],
+      examples: [
+        "Okay, picture the single worst possible moment for a fire alarm to go off.",
+        "So — have you ever completely embarrassed yourself in front of someone you admire?"
+      ]
     },
     // --- Chapter 11: Empower ---
     {
@@ -1371,7 +1586,19 @@ var CaptivateContent = {
       minLevel: 6,
       skill: "cap-empower",
       source: "Captivate Ch.11",
-      tip: "60% → 94% with a real reason, 93% with a nonsense one. Strengthen the because by tying it to Them, You, or Us."
+      tip: "60% → 94% with a real reason, 93% with a nonsense one. Strengthen the because by tying it to Them, You, or Us.",
+      how: [
+        "Catch your next three asks — favors, requests, orders — before they leave your mouth.",
+        "Attach a reason to each with the word \"because,\" even a simple one; the word itself does surprising work.",
+        "Build the strongest version by pointing the reason at their benefit or a shared one, not just your own convenience.",
+        "Track how the three asks land compared to how the same asks usually go.",
+        "Success feels like less friction: faster yeses and fewer follow-up questions."
+      ],
+      examples: [
+        "Can you cover the door for ten? Because I've got to walk the VIPs in.",
+        "Come through early, because I want you to meet the owner before it gets packed.",
+        "Mind sending that tonight? Because I want to lock the flyer by morning."
+      ]
     },
     {
       id: "cap-q-delegate",
@@ -1384,7 +1611,18 @@ var CaptivateContent = {
       axis: "comp",
       skill: "cap-empower",
       source: "Captivate Ch.11",
-      tip: "Customized ownership: they control the how. The Ikea effect means they'll value what they build far more than what you hand them finished."
+      tip: "Customized ownership: they control the how. The Ikea effect means they'll value what they build far more than what you hand them finished.",
+      how: [
+        "Pick one recurring task you keep doing yourself that someone else could genuinely own.",
+        "Choose the person by matching the task to a skill you've actually seen in them — and tell them that's exactly why you're asking.",
+        "Hand over the mission and the why, not a checklist of steps.",
+        "Then step back completely: no hovering, no mid-course corrections unless they ask.",
+        "Success is them delivering it their own way — and caring about it more than they ever would about your way."
+      ],
+      examples: [
+        "You're the best designer I know — can you own the flyer for Friday? Your call on the whole look.",
+        "Who here is good with spreadsheets? I need someone to run the guest list start to finish."
+      ]
     },
     // --- Chapter 12: Reveal ---
     {
@@ -1398,7 +1636,21 @@ var CaptivateContent = {
       axis: "warm",
       skill: "cap-reveal",
       source: "Captivate Ch.12",
-      tip: "Transitions: \"I'd love your advice on something...\" or \"Can I brainstorm something with you?\" Rule: never ask for advice you don't actually need."
+      tip: "Transitions: \"I'd love your advice on something...\" or \"Can I brainstorm something with you?\" Rule: never ask for advice you don't actually need.",
+      how: [
+        "Pick a real decision you're actually wrestling with — a fake question reads as fake instantly.",
+        "Choose someone whose judgment you respect, ideally the person you want closer.",
+        "Ask openly and admit what you don't know — asking a favor makes people like you MORE, not less.",
+        "Tilt your head, take the answer in fully, and ask one follow-up before you respond.",
+        "Later, actually use the advice and show them proof — that closes the loop and doubles the bond."
+      ],
+      examples: [
+        "Can I get your advice on something? You know this world way better than I do.",
+        "I'm stuck between two options — can I think out loud with you for five minutes?",
+        "You were right about the venue — look how it turned out."
+      ],
+      demo: "head-tilt",
+      search: "head tilt listening body language"
     },
     {
       id: "cap-q-antiperfect",
@@ -1411,7 +1663,21 @@ var CaptivateContent = {
       minLevel: 6,
       skill: "cap-reveal",
       source: "Captivate Ch.12",
-      tip: "The spotlight effect says nobody notices your flubs half as much as you think — and the pratfall effect says the ones they do notice make you MORE likable."
+      tip: "The spotlight effect says nobody notices your flubs half as much as you think — and the pratfall effect says the ones they do notice make you MORE likable.",
+      how: [
+        "Pick three to land this week: admit you were wrong, say you don't know, ask what a word means, apologize plainly, or admit you've never heard of the thing everyone's discussing.",
+        "When the moment arrives, say it straight — no cushioning, no joke to deflect.",
+        "Keep your palms open and shoulders loose as you say it; the body should match the honesty.",
+        "Notice that nobody flinches — people track your flubs at about half the rate you assume.",
+        "Notice who warms up to you afterward; small imperfections make capable people MORE likable, not less."
+      ],
+      examples: [
+        "Honestly? I have no idea. Teach me.",
+        "You know what — you were right, I was wrong about that.",
+        "Wait, what does that word actually mean? I've just been nodding along."
+      ],
+      demo: "palms-up",
+      search: "open palms honest gesture body language"
     },
     // --- Chapter 13: Protect ---
     {
@@ -1425,7 +1691,21 @@ var CaptivateContent = {
       axis: "warm",
       skill: "cap-protect",
       source: "Captivate Ch.13",
-      tip: "Name with their exact words (\"that sounds incredibly unfair\"), Understand what they're seeking (often a primary value like Information), Transform only after volume drops."
+      tip: "Name with their exact words (\"that sounds incredibly unfair\"), Understand what they're seeking (often a primary value like Information), Transform only after volume drops.",
+      how: [
+        "When someone comes in hot, resist both instincts: don't jump to fixing, and don't go robot-calm — flat calm reads as not caring and pours fuel on it.",
+        "First, name the feeling using THEIR exact words back to them; an emotion that gets named starts losing pressure.",
+        "Second, understand: ask what happened and what they're really after underneath — it's often respect, being kept in the loop, or feeling valued.",
+        "Nod slowly while they talk; a few unhurried nods keeps them going without you saying a word.",
+        "Only when you hear the big sigh and the volume drop, ask what they need and what would make it right — never a second before."
+      ],
+      examples: [
+        "That sounds incredibly unfair — I get why you're heated.",
+        "Walk me through what happened.",
+        "Okay — what needs to happen for this to feel right?"
+      ],
+      demo: "triple-nod",
+      search: "slow nodding active listening"
     },
     {
       id: "cap-q-boundary",
@@ -1437,7 +1717,20 @@ var CaptivateContent = {
       minLevel: 6,
       skill: "cap-protect",
       source: "Captivate Ch.13",
-      tip: "\"Thank you so much for asking. I can't make it.\" Full stop. Optional step-up: counteroffer on your terms (\"brunch tomorrow instead?\"). Text or email counts if face-to-face is hard."
+      tip: "\"Thank you so much for asking. I can't make it.\" Full stop. Optional step-up: counteroffer on your terms (\"brunch tomorrow instead?\"). Text or email counts if face-to-face is hard.",
+      how: [
+        "Pick one ask from a draining person that you'd normally cave on.",
+        "Open warm: thank them genuinely for thinking of you.",
+        "Decline in one clear sentence, letting your voice drop at the end like a period — then stop talking. Holding the silence is the hard part.",
+        "Give zero reasons. Any explanation, even a true one, is a handle they can grab to negotiate with.",
+        "Optional: counteroffer on your own terms if you actually want to see them. Text counts if face-to-face feels too hard."
+      ],
+      examples: [
+        "Thank you so much for the invite — I can't make it.",
+        "Appreciate you asking! I'm going to pass on this one.",
+        "Can't do Saturday — but I'd love to grab lunch next week."
+      ],
+      demo: "downward-inflection"
     },
     // --- Chapter 14: Engage ---
     {
@@ -1451,7 +1744,21 @@ var CaptivateContent = {
       axis: "warm",
       skill: "cap-engage",
       source: "Captivate Ch.14",
-      tip: "We mirror the treatment we receive: smiles beget smiles, liking begets liking. Also: invite people to sit with you, welcome joiners, thank leavers."
+      tip: "We mirror the treatment we receive: smiles beget smiles, liking begets liking. Also: invite people to sit with you, welcome joiners, thank leavers.",
+      how: [
+        "For one week, open every interaction you care about with an out-loud welcome — actually say you're glad they're there.",
+        "Pair the greeting with a quick pop of both eyebrows and a real smile — the universal split-second \"I see you\" signal.",
+        "Close every interaction by naming that you enjoyed it, and be specific about what.",
+        "Only run this with people you genuinely mean it about; manufactured warmth reads instantly.",
+        "Watch the mirror effect: within days, people start greeting YOU with the same energy you've been giving."
+      ],
+      examples: [
+        "Hey! I was hoping you'd be here.",
+        "So glad you called — perfect timing.",
+        "This was great. Let's not wait so long next time."
+      ],
+      demo: "eyebrow-flash",
+      search: "eyebrow flash greeting expression"
     },
     {
       id: "cap-q-belonging",
@@ -1464,7 +1771,20 @@ var CaptivateContent = {
       axis: "warm",
       skill: "cap-engage",
       source: "Captivate Ch.14",
-      tip: "Be the team captain who picks the new kid. Everyone's deepest desire (per Oprah's one universal) is simply to feel valued."
+      tip: "Be the team captain who picks the new kid. Everyone's deepest desire (per Oprah's one universal) is simply to feel valued.",
+      how: [
+        "At your next group hang, scan the edges: who's hovering half-in, half-out of the circle?",
+        "Angle your whole body toward them — feet, hips, shoulders — and physically open a gap in the group.",
+        "Wave them in and hand them an easy entry: introduce them with genuine hype, or tee up a topic they can jump on.",
+        "Ask them a direct question so the group's attention includes them for a beat.",
+        "Success is watching their posture visibly unclench as they land inside the circle."
+      ],
+      examples: [
+        "Hey, come join us — we're arguing about the best late-night food spot.",
+        "Everyone, this is Ria — she's been to more shows this year than all of us combined."
+      ],
+      demo: "fronting",
+      search: "open body orientation welcoming group circle"
     },
     // --- Boss quests ---
     {
@@ -1479,7 +1799,21 @@ var CaptivateContent = {
       axis: "warm",
       skill: "cap-control",
       source: "Captivate Ch.1-5",
-      tip: "Chain the hacks: Launch Stance at the door, bar-end position, \"What was the highlight of your day?\", thread-hunt, then rave-introduce your new contact to someone else. Debrief afterward like Truman counting delegates."
+      tip: "Chain the hacks: Launch Stance at the door, bar-end position, \"What was the highlight of your day?\", thread-hunt, then rave-introduce your new contact to someone else. Debrief afterward like Truman counting delegates.",
+      how: [
+        "Before entering, reset your posture — shoulders back, chin level, hands visible — then walk straight past the entrance crowd without stopping; everyone there is still in arrival-anxiety mode.",
+        "Skip the check-in cluster and the food table; station yourself at the end of the bar or near the host, where people arrive relaxed with a fresh drink and ready to talk.",
+        "Open with a sparker instead of a script question, then hunt threads until you've found three real commonalities with someone new.",
+        "Cap the run with a raving introduction: bring your new contact to someone else with their name, genuine hype, and a topic tee-up.",
+        "Debrief on the way home: which position produced the best conversation? That's your spot next time."
+      ],
+      examples: [
+        "How's the drink selection tonight — what should I get?",
+        "So what's been the highlight of your week?",
+        "You two need to meet — Kai runs the wildest pop-up dinners in town."
+      ],
+      demo: "zones-map",
+      search: "networking event people mingling bar"
     },
     {
       id: "cap-q-boss-cipher",
@@ -1492,7 +1826,19 @@ var CaptivateContent = {
       boss: true,
       skill: "cap-value",
       source: "Captivate Ch.7-9",
-      tip: "Speed-read the traits, decode the language from how they treat favorites, infer the value from complaints and worries. Then: one trait-tailored ask, one appreciation act in their language, one move that feeds their value."
+      tip: "Speed-read the traits, decode the language from how they treat favorites, infer the value from complaints and worries. Then: one trait-tailored ask, one appreciation act in their language, one move that feeds their value.",
+      how: [
+        "Pick your Riser — the one relationship you most want to level up.",
+        "Layer one: guess their five personality traits from observed behavior — how they plan, socialize, react to new things, argue, and handle stress.",
+        "Layer two: decode their appreciation language from how they treat their favorite people and from best-gift and celebration questions.",
+        "Layer three: infer their primary value from their complaints, brags, and what keeps them up at night.",
+        "Act on all three in one week: one ask tailored to their traits, one appreciation act in their language, one move that feeds their value.",
+        "Grade yourself on their reactions — real smiles and faster replies mean the cipher is cracked."
+      ],
+      examples: [
+        "What's the best gift you've ever gotten?",
+        "Have you done one of those big personality tests? I'm weirdly into them right now."
+      ]
     },
     {
       id: "cap-q-boss-experiment",
@@ -1505,7 +1851,14 @@ var CaptivateContent = {
       boss: true,
       skill: "cap-engage",
       source: "Captivate Ch.14",
-      tip: "Ariely's model: every interaction is your responsibility to make interesting. Examples: test all three sweet spots and keep the best; test three stories and keep the winner; find your go-to sparker."
+      tip: "Ariely's model: every interaction is your responsibility to make interesting. Examples: test all three sweet spots and keep the best; test three stories and keep the winner; find your go-to sparker.",
+      how: [
+        "Look back over the whole branch and pick the three techniques that worked best for you personally.",
+        "For each, design one mini-experiment with a measurable outcome: try three openers and count which gets the longest replies; work three positions at one event; test three stories and track the laughs.",
+        "Run all three experiments within one week, in real settings — events, streams, errands all count.",
+        "Keep notes like a scientist: what you tried, on whom, what happened.",
+        "Keep the winner from each experiment as a permanent part of your toolkit, then design your next round."
+      ]
     }
   ]
 };
