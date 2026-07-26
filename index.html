@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#12101c">
+<title>Captivate — Social Skills Quest</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ======= Header / HUD ======= -->
+  <header class="hud">
+    <div class="hud-left">
+      <div class="avatar" id="hud-avatar">🎭</div>
+      <div class="hud-id">
+        <div class="hud-title" id="hud-level-title">Wallflower</div>
+        <div class="hud-sub">Level <span id="hud-level">1</span></div>
+      </div>
+    </div>
+    <div class="hud-center">
+      <div class="xpbar" title="XP to next level">
+        <div class="xpbar-fill" id="hud-xpbar"></div>
+      </div>
+      <div class="hud-xp-label"><span id="hud-xp">0</span> XP</div>
+    </div>
+    <div class="hud-right">
+      <div class="streak" id="hud-streak" title="Daily streak">🔥 0</div>
+    </div>
+  </header>
+
+  <!-- ======= Main content panes ======= -->
+  <main id="main">
+    <section id="pane-home" class="pane active"></section>
+    <section id="pane-quests" class="pane"></section>
+    <section id="pane-trainer" class="pane"></section>
+    <section id="pane-skilltree" class="pane"></section>
+    <section id="pane-analyzer" class="pane"></section>
+    <section id="pane-settings" class="pane"></section>
+  </main>
+
+  <!-- ======= Bottom tab bar (mobile-first) ======= -->
+  <nav class="tabbar">
+    <button class="tab active" data-pane="home"><span class="tab-ico">🏠</span><span class="tab-label">Home</span></button>
+    <button class="tab" data-pane="quests"><span class="tab-ico">⚔️</span><span class="tab-label">Quests</span></button>
+    <button class="tab" data-pane="trainer"><span class="tab-ico">🧠</span><span class="tab-label">Train</span></button>
+    <button class="tab" data-pane="skilltree"><span class="tab-ico">🌳</span><span class="tab-label">Skills</span></button>
+    <button class="tab" data-pane="analyzer"><span class="tab-ico">🎙️</span><span class="tab-label">Analyze</span></button>
+    <button class="tab" data-pane="settings"><span class="tab-ico">⚙️</span><span class="tab-label">More</span></button>
+  </nav>
+
+  <!-- ======= Toast + modal layers ======= -->
+  <div id="toast-layer"></div>
+  <div id="modal-layer" class="hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card" id="modal-card"></div>
+  </div>
+</div>
+
+<!-- Content data (generated from the books) -->
+<script src="js/data/captivate-content.js"></script>
+<script src="js/data/cues-content.js"></script>
+<script src="js/data/quests-data.js"></script>
+
+<!-- Engine -->
+<script src="js/state.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/quests.js"></script>
+<script src="js/trainer.js"></script>
+<script src="js/skilltree.js"></script>
+<script src="js/analyzer.js"></script>
+<script src="js/home.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
