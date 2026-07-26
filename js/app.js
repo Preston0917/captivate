@@ -7,6 +7,7 @@
     home: () => Home.render(),
     quests: () => Quests.render(),
     night: () => NightMode.render(),
+    story: () => StoryMode.render(),
     trainer: () => Trainer.render(),
     skilltree: () => SkillTree.render(),
     analyzer: () => Analyzer.render(),

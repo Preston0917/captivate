@@ -31,6 +31,13 @@ const Home = (() => {
       UI.el("button", { class: "btn primary", style: "margin-top:10px", text: NightMode.active ? "Back to my shift" : "Start a shift", onclick: () => App.show("night") }),
     ]));
 
+    // Story Mode shortcut
+    pane.appendChild(UI.el("div", { class: "card daily-spark", style: "border-color:var(--comp)" }, [
+      UI.el("div", { class: "spark-label", style: "color:var(--comp)", text: "🗺️ Story Mode" }),
+      UI.el("div", { class: "spark-text", text: StoryMode.teaser() }),
+      UI.el("button", { class: "btn primary", style: "margin-top:10px", text: "Continue the journey", onclick: () => App.show("story") }),
+    ]));
+
     // Stats
     pane.appendChild(UI.el("div", { class: "stat-grid" }, [
       statTile(s.streak, "day streak"),
