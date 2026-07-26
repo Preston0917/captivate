@@ -64,6 +64,7 @@ const Quests = (() => {
     const leveled = Store.addXp(q.xp, q.skill);
     UI.xpToast(q.xp, leveled);
     checkBadges();
+    Native.rescheduleNotifications();
     render();
   }
 
@@ -125,6 +126,7 @@ const Quests = (() => {
             const c = Math.max(0, (Store.state.tallies[q.id] || 0) - 1);
             Store.state.tallies[q.id] = c; Store.save();
             countEl.textContent = String(c);
+            Native.haptic("tap");
           },
         }),
         countEl,
@@ -134,6 +136,7 @@ const Quests = (() => {
             const c = (Store.state.tallies[q.id] || 0) + 1;
             Store.state.tallies[q.id] = c; Store.save();
             countEl.textContent = String(c);
+            Native.haptic("tap");
             if (c >= q.goal) completeQuest(q, isDaily);
           },
         }),
@@ -142,7 +145,7 @@ const Quests = (() => {
       card.appendChild(tally);
     } else {
       card.appendChild(UI.el("div", { class: "quest-actions" }, [
-        UI.el("button", { class: "btn primary small", text: "I did it ✔", onclick: () => completeQuest(q, isDaily) }),
+        UI.el("button", { class: "btn primary small", text: "I did it ✔", onclick: () => { Native.haptic("tap"); completeQuest(q, isDaily); } }),
         (q.how || q.tip) ? UI.el("button", {
           class: "btn ghost small", text: "How do I do this?",
           onclick: () => howToModal(q),

@@ -41,7 +41,9 @@
       pane.appendChild(UI.el("div", { class: "pane-sub", text: "API access, badges, and your data." }));
 
       // --- API key ---
-      const keyInput = UI.el("input", { type: "password", placeholder: "sk-ant-...", value: s.settings.apiKey });
+      // Native keeps the key in the Keychain, so it arrives asynchronously.
+      const keyInput = UI.el("input", { type: "password", placeholder: "sk-ant-...", value: "" });
+      Native.getApiKey().then(k => { keyInput.value = k || ""; });
       const modelSel = UI.el("select", {},
         ["claude-opus-5", "claude-sonnet-5", "claude-haiku-4-5"].map(m =>
           UI.el("option", { value: m, text: m, ...(s.settings.model === m ? { selected: "" } : {}) })
@@ -50,7 +52,7 @@
       pane.appendChild(UI.el("div", { class: "card" }, [
         UI.el("h3", { text: "🔑 Claude API" }),
         UI.el("div", { class: "field" }, [
-          UI.el("label", { text: "API key (stored only in this browser)" }),
+          UI.el("label", { text: Native.isNative ? "API key (stored in the iOS Keychain)" : "API key (stored only in this browser)" }),
           keyInput,
           UI.el("div", { class: "hint", text: "Used for the transcript analyzer. The key never leaves your device except to call api.anthropic.com directly. Personal use only — don't host this page publicly with a key saved." }),
         ]),
@@ -61,14 +63,56 @@
         ]),
         UI.el("button", {
           class: "btn primary", text: "Save",
-          onclick: () => {
-            s.settings.apiKey = keyInput.value.trim();
+          onclick: async () => {
             s.settings.model = modelSel.value;
             Store.save();
+            await Native.setApiKey(keyInput.value.trim());
+            Native.haptic("success");
             UI.toast("Settings saved");
+            Native.rescheduleNotifications();
           },
         }),
       ]));
+
+      // --- Reminders (native only: the web can't schedule local notifications) ---
+      if (Native.isNative) {
+        const cfg = s.settings.notifs;
+        const questTime = UI.el("input", { type: "time", value: cfg.questHour || "10:00" });
+        const streakTime = UI.el("input", { type: "time", value: cfg.streakHour || "20:30" });
+        const toggle = UI.el("input", { type: "checkbox", ...(cfg.enabled ? { checked: "" } : {}) });
+
+        toggle.addEventListener("change", async () => {
+          const granted = await Native.enableNotifications(toggle.checked);
+          toggle.checked = granted;
+          UI.toast(granted ? "Reminders on — warm nudges only" : "Reminders off");
+        });
+        const saveTimes = () => {
+          cfg.questHour = questTime.value || "10:00";
+          cfg.streakHour = streakTime.value || "20:30";
+          Store.save();
+          Native.rescheduleNotifications();
+        };
+        questTime.addEventListener("change", saveTimes);
+        streakTime.addEventListener("change", saveTimes);
+
+        pane.appendChild(UI.el("div", { class: "card" }, [
+          UI.el("h3", { text: "🔔 Reminders" }),
+          UI.el("div", { class: "field" }, [
+            UI.el("label", { style: "display:flex; align-items:center; gap:8px" }, [toggle, UI.el("span", { text: "Send me reminders" })]),
+            UI.el("div", { class: "hint", text: "Two friendly nudges a day, and a heads-up when a night goal is close. Never a guilt trip — you can turn them off any time." }),
+          ]),
+          UI.el("div", { class: "field" }, [
+            UI.el("label", { text: "Quest nudge" }),
+            questTime,
+            UI.el("div", { class: "hint", text: "Skipped automatically on days you've already logged a rep." }),
+          ]),
+          UI.el("div", { class: "field", style: "margin-bottom:0" }, [
+            UI.el("label", { text: "Evening streak check-in" }),
+            streakTime,
+            UI.el("div", { class: "hint", text: "Only shows up if the day is still repless — freezes cover you either way." }),
+          ]),
+        ]));
+      }
 
       // --- Badges ---
       pane.appendChild(UI.el("div", { class: "section-label", text: "Badges" }));
@@ -128,4 +172,8 @@
   UI.refreshHud();
   show("home");
   registerServiceWorker();
+  Native.boot();          // no-op on web
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") Native.rescheduleNotifications();
+  });
 })();

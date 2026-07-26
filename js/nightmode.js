@@ -108,6 +108,7 @@ const NightMode = (() => {
     };
     Store.save();
     requestWake();
+    Native.rescheduleNotifications();   // prompt cadence goes out as notifications
     render();
     goalModal(true);   // offer to call your shots for the night
   }
@@ -166,12 +167,14 @@ const NightMode = (() => {
       deadlineAt, completedAt: null, expired: false,
     });
     Store.save();
+    Native.rescheduleNotifications();   // goal warning + deadline pings
     render();
   }
 
   function tickGoal(g) {
     const n = ns();
     if (g.expired || g.completedAt) return;
+    Native.haptic("tap");
     g.done += 1;
     n.xp += GOAL_TICK_XP;
     let xp = GOAL_TICK_XP;
@@ -199,6 +202,7 @@ const NightMode = (() => {
       }
     }
     UI.xpToast(xp, leveled);
+    if (finished) Native.rescheduleNotifications();   // drop this goal's pings
     render();
   }
 
@@ -306,6 +310,7 @@ const NightMode = (() => {
     const n = ns();
     const p = PROMPTS.find(x => x.id === n.current);
     if (!p) { n.current = null; Store.save(); return; }
+    Native.haptic("tap");
 
     if (didIt) {
       n.done += 1;
@@ -333,6 +338,7 @@ const NightMode = (() => {
       Store.save();
       UI.toast("All good — smaller one coming soon");
     }
+    Native.rescheduleNotifications();   // the cadence just shifted
     render();
   }
 
@@ -360,6 +366,7 @@ const NightMode = (() => {
     Store.state.night = { active: false };
     Store.save();
     releaseWake();
+    Native.rescheduleNotifications();   // cancels every pending shift ping
     UI.refreshHud();
 
     const wrap = UI.el("div", { class: "levelup" }, [

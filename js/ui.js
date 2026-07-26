@@ -48,6 +48,7 @@ const UI = (() => {
 
   function xpToast(amount, leveled) {
     toast(`+${amount} XP`);
+    Native.haptic("success");
     refreshHud();
     if (leveled) levelUpModal();
   }
@@ -69,6 +70,7 @@ const UI = (() => {
 
   function levelUpModal() {
     const s = Store.state;
+    Native.haptic("success");
     const wrap = el("div", { class: "levelup" }, [
       el("div", { class: "lv-big", text: "🎉" }),
       el("div", { class: "lv-title", text: `Level ${s.level} — ${Store.levelTitle(s.level)}` }),
@@ -79,6 +81,7 @@ const UI = (() => {
   }
 
   function badgeModal(badge) {
+    Native.haptic("success");
     const wrap = el("div", { class: "levelup" }, [
       el("div", { class: "lv-big", text: badge.icon }),
       el("div", { class: "lv-title", text: `Badge earned: ${badge.name}` }),

@@ -47,7 +47,12 @@ const Store = (() => {
     badges: [],                // badgeId[]
     analyses: [],              // saved transcript analysis summaries (small)
     customQuests: [],          // user-authored quests
-    settings: { apiKey: "", model: "claude-opus-5" },
+    settings: {
+      apiKey: "",                 // web only — the iOS wrap keeps it in the Keychain
+      model: "claude-opus-5",
+      // Native reminders (ignored on web, where nothing can schedule them)
+      notifs: { enabled: false, questHour: "10:00", streakHour: "20:30" },
+    },
   });
 
   let s = load();
@@ -55,8 +60,13 @@ const Store = (() => {
   function load() {
     try {
       const raw = localStorage.getItem(KEY);
-      if (!raw) return defaults();
-      const loaded = Object.assign(defaults(), JSON.parse(raw));
+      const d = defaults();
+      if (!raw) return d;
+      const defSettings = d.settings;                       // grabbed before the shallow merge
+      const loaded = Object.assign(d, JSON.parse(raw));
+      // Object.assign is shallow: re-merge nested settings so new keys get defaults
+      loaded.settings = Object.assign({}, defSettings, loaded.settings || {});
+      loaded.settings.notifs = Object.assign({}, defSettings.notifs, loaded.settings.notifs || {});
       // Migration for saves from before the rep-streak rework
       if (loaded.bestStreak < loaded.streak) loaded.bestStreak = loaded.streak;
       if (!loaded.lastRepDay && loaded.lastActiveDay) loaded.lastRepDay = loaded.lastActiveDay;
@@ -132,6 +142,9 @@ const Store = (() => {
     // earn a freeze back every 5-day stretch, capped at 3 — granted, never bought
     if (s.streak % 5 === 0) s.freezes = Math.min(3, s.freezes + 1);
     save();
+    // Today's nudges are pointless now that a rep is in (no-op on web).
+    // `const Native` is a script global, not a window property — check by name.
+    if (typeof Native !== "undefined") Native.rescheduleNotifications();
     return { counted: true, frozeUsed };
   }
 

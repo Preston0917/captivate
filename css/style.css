@@ -46,9 +46,11 @@ a { color: var(--violet); }
 /* ---------- HUD ---------- */
 .hud {
   position: sticky; top: 0; z-index: 30;
-  height: var(--hud-h);
+  /* env() is 0 on the web; in the iOS wrap / standalone PWA it clears the
+     status bar and Dynamic Island instead of sliding under them. */
+  height: calc(var(--hud-h) + env(safe-area-inset-top));
   display: flex; align-items: center; gap: 12px;
-  padding: 0 14px;
+  padding: env(safe-area-inset-top) 14px 0;
   background: linear-gradient(180deg, #191530 0%, #141126 100%);
   border-bottom: 1px solid var(--card-edge);
 }

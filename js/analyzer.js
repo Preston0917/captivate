@@ -7,6 +7,8 @@
 
 const Analyzer = (() => {
 
+  let taRef = null;   // live transcript box, so an imported file can land in it
+
   const SCHEMA = {
     type: "object",
     additionalProperties: false,
@@ -104,7 +106,8 @@ const Analyzer = (() => {
   }
 
   async function analyze(transcript, userName) {
-    const { apiKey, model } = Store.state.settings;
+    const { model } = Store.state.settings;
+    const apiKey = await Native.getApiKey();   // Keychain on iOS, save file on web
     const body = {
       model: model || "claude-opus-5",
       max_tokens: 8000,
@@ -150,19 +153,21 @@ const Analyzer = (() => {
     pane.appendChild(UI.el("h2", { class: "pane-title", text: "Conversation Analyzer" }));
     pane.appendChild(UI.el("div", { class: "pane-sub", text: "Paste a transcript from a recorded conversation. Get scored on the Cues charisma scale and coached with Captivate techniques. +40 XP per analysis." }));
 
-    if (!s.settings.apiKey) {
-      pane.appendChild(UI.el("div", { class: "card" }, [
-        UI.el("h3", { text: "🔑 API key needed" }),
-        UI.el("div", { class: "muted", text: "Add your Claude API key in Settings to enable the analyzer." }),
-        UI.el("button", { class: "btn primary", style: "margin-top:10px", text: "Open Settings", onclick: () => App.show("settings") }),
-      ]));
-    }
+    const needKeyCard = UI.el("div", { class: "card" }, [
+      UI.el("h3", { text: "🔑 API key needed" }),
+      UI.el("div", { class: "muted", text: "Add your Claude API key in Settings to enable the analyzer." }),
+      UI.el("button", { class: "btn primary", style: "margin-top:10px", text: "Open Settings", onclick: () => App.show("settings") }),
+    ]);
+    if (!Native.hasApiKey()) pane.appendChild(needKeyCard);
+    // The Keychain read is async — drop the card once a key turns up.
+    Native.getApiKey().then(k => { if (k && needKeyCard.parentNode) needKeyCard.remove(); });
 
     const nameInput = UI.el("input", { type: "text", placeholder: "e.g. Preston, or SPEAKER_1", value: s.lastUserName || "" });
     const ta = UI.el("textarea", {
       class: "analyzer-input",
       placeholder: "Paste transcript here…\n\nWorks best with speaker labels, e.g.:\nPreston: hey! how'd the show go?\nGuest: honestly better than I expected…"
     });
+    taRef = ta;
 
     const goBtn = UI.el("button", {
       class: "btn primary block", style: "margin-top:10px", text: "🔍 Analyze conversation",
@@ -170,7 +175,7 @@ const Analyzer = (() => {
         const transcript = ta.value.trim();
         const userName = nameInput.value.trim() || "the first speaker";
         if (!transcript) { UI.toast("Paste a transcript first"); return; }
-        if (!s.settings.apiKey) { UI.toast("Add your API key in Settings"); return; }
+        if (!(await Native.getApiKey())) { UI.toast("Add your API key in Settings"); return; }
         if (transcript.length > 400000) { UI.toast("Transcript too long — trim it down"); return; }
 
         s.lastUserName = userName; Store.save();
@@ -338,5 +343,11 @@ const Analyzer = (() => {
     ]);
   }
 
-  return { render };
+  // Share-sheet / "Open in Captivate" import drops a .txt straight in here.
+  function fillTranscript(text) {
+    App.show("analyzer");
+    if (taRef) { taRef.value = text; taRef.focus(); }
+  }
+
+  return { render, fillTranscript };
 })();

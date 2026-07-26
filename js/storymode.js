@@ -233,6 +233,7 @@ var StoryMode = (() => {
     if (!n || d.catches[id]) return;
     d.catches[id] = { at: Date.now(), seenStage: 1 };
     Store.save();
+    Native.haptic("tap");
     Store.logRep();
     awardXp(StoryData.catchXp, n.skill);
     pushModal(done => catchModalNode(n, done));
@@ -259,6 +260,7 @@ var StoryMode = (() => {
     if (d.evolutionsSeen.indexOf(key) >= 0) return;
     d.evolutionsSeen.push(key);
     Store.save();
+    Native.haptic("success");
     const xp = (StoryData.evoXp && StoryData.evoXp[stage]) || 25;
     awardXp(xp, neon.skill);
     pushModal(done => evolutionModalNode(neon, stage, done));
