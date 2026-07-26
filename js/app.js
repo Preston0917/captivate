@@ -113,7 +113,19 @@
     },
   };
 
+  // ---------- service worker ----------
+  // Web/PWA only: the Capacitor wrap serves from capacitor:// and must not run it,
+  // and file:// has no SW support at all.
+  function registerServiceWorker() {
+    if (window.Capacitor) return;
+    if (!/^https?:$/.test(location.protocol)) return;
+    if (!("serviceWorker" in navigator)) return;
+    navigator.serviceWorker.register("sw.js", { scope: "./" })
+      .catch(err => console.warn("SW registration failed", err));
+  }
+
   // ---------- boot ----------
   UI.refreshHud();
   show("home");
+  registerServiceWorker();
 })();

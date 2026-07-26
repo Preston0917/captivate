@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Captivate">
+  <title>Captivate</title>
+  <defs>
+    <radialGradient id="cv-bg" cx="50%" cy="32%" r="76%">
+      <stop offset="0" stop-color="#2b2447"/>
+      <stop offset="0.52" stop-color="#1a1728"/>
+      <stop offset="1" stop-color="#12101c"/>
+    </radialGradient>
+    <linearGradient id="cv-mask" x1="0" y1="0.1" x2="1" y2="0.9">
+      <stop offset="0" stop-color="#ff8a5c"/>
+      <stop offset="0.5" stop-color="#9b7bff"/>
+      <stop offset="1" stop-color="#5cb8ff"/>
+    </linearGradient>
+    <linearGradient id="cv-spark" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#ffe7a8"/>
+      <stop offset="0.45" stop-color="#f5c451"/>
+      <stop offset="1" stop-color="#ff8a5c"/>
+    </linearGradient>
+    <filter id="cv-glow" x="-45%" y="-45%" width="190%" height="190%">
+      <feGaussianBlur stdDeviation="16"/>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#cv-bg)"/>
+
+  <g transform="translate(256,256) scale(1.155) translate(-256,-193)">
+    <!-- soft neon bloom behind the motif -->
+    <g filter="url(#cv-glow)" opacity="0.55">
+      <path fill="url(#cv-mask)" fill-rule="evenodd" d="M92 244C92 202 132 178 178 186C210 192 302 192 334 186C380 178 420 202 420 244C420 296 384 340 338 340C300 340 276 316 262 292C258 285 254 285 250 292C236 316 212 340 174 340C128 340 92 296 92 244Z"/>
+      <path fill="url(#cv-spark)" d="M256 46C262 88 276 102 318 108C276 114 262 128 256 170C250 128 236 114 194 108C236 102 250 88 256 46Z"/>
+    </g>
+
+    <!-- mask: domino silhouette with two cut-out eyes -->
+    <path fill="url(#cv-mask)" fill-rule="evenodd"
+      d="M92 244C92 202 132 178 178 186C210 192 302 192 334 186C380 178 420 202 420 244C420 296 384 340 338 340C300 340 276 316 262 292C258 285 254 285 250 292C236 316 212 340 174 340C128 340 92 296 92 244Z
+         M134 248C148 220 204 220 218 248C204 276 148 276 134 248Z
+         M294 248C308 220 364 220 378 248C364 276 308 276 294 248Z"/>
+
+    <!-- spark: the moment attention catches -->
+    <path fill="url(#cv-spark)" d="M256 46C262 88 276 102 318 108C276 114 262 128 256 170C250 128 236 114 194 108C236 102 250 88 256 46Z"/>
+  </g>
+</svg>
