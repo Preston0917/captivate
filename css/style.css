@@ -393,3 +393,19 @@ h2.pane-title { font-size: 1.25rem; margin-bottom: 4px; }
 .night-prompt .np-icon { font-size: 40px; }
 .night-prompt .np-text { font-size: 1.05rem; font-weight: 700; line-height: 1.5; margin-top: 10px; }
 .night-prompt .say-chip { text-align: left; }
+
+/* ---------- Night goals ---------- */
+.goal-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 10px; padding: 10px 12px;
+  background: var(--bg-2); border: 1px solid var(--card-edge); border-radius: 11px;
+}
+.goal-row.hit { border-color: var(--good); }
+.goal-row.exp { opacity: 0.55; }
+.goal-info { flex: 1; min-width: 0; }
+.goal-text { font-weight: 700; font-size: 0.88rem; line-height: 1.35; }
+.goal-meta { font-size: 0.72rem; color: var(--ink-faint); margin-top: 3px; }
+.goal-dots { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
+.gdot { width: 14px; height: 8px; border-radius: 4px; background: var(--bg-3); border: 1px solid var(--card-edge); }
+.gdot.lit { background: var(--gold); border-color: var(--gold); }
+.goal-plus { flex: none; width: 46px; height: 46px; font-size: 15px; color: var(--gold); border-color: var(--gold-deep); }

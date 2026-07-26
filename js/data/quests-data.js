@@ -22,5 +22,6 @@ const QuestData = {
     { id: "night-first",    icon: "🌙", name: "First Shift",      desc: "Complete an action in Night Mode." },
     { id: "night-combo5",   icon: "⚡", name: "On a Heater",      desc: "Chain a ×5 combo in one night." },
     { id: "night-ten",      icon: "🎆", name: "Life of the Party", desc: "10 actions in a single shift." },
+    { id: "called-shot",    icon: "🎯", name: "Called My Shot",   desc: "Hit a night goal before its deadline." },
   ],
 };

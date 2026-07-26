@@ -104,10 +104,12 @@ const NightMode = (() => {
       current: null,
       done: 0, passed: 0, combo: 0, bestCombo: 0, xp: 0,
       usedIds: [],
+      goals: [],
     };
     Store.save();
     requestWake();
     render();
+    goalModal(true);   // offer to call your shots for the night
   }
 
   function drawPrompt() {
@@ -131,6 +133,172 @@ const NightMode = (() => {
     const n = ns();
     if (!n.active) return;
     if (!n.current && Date.now() >= n.nextAt) drawPrompt();
+    // Expire overdue goals (earned tick-XP is kept; just closes the window)
+    for (const g of n.goals || []) {
+      if (!g.completedAt && !g.expired && Date.now() > g.deadlineAt) {
+        g.expired = true;
+        Store.save();
+      }
+    }
+  }
+
+  /* ---------- night goals (call your shots) ---------- */
+  const GOAL_PRESETS = [
+    { text: "Talk to new guys", count: 3, mode: "rel", mins: 30 },
+    { text: "Introduce myself to girls I find attractive", count: 5, mode: "abs", time: "01:00" },
+    { text: "Learn and use names", count: 3, mode: "rel", mins: 60 },
+    { text: "Start conversations first (not approached)", count: 3, mode: "rel", mins: 60 },
+    { text: "Give compliments on something they chose", count: 3, mode: "abs", time: "00:00" },
+  ];
+  const GOAL_TICK_XP = 10;
+  const GOAL_BONUS_XP = 50;
+
+  function fmtClock(ts) {
+    const d = new Date(ts);
+    return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }
+
+  function addGoal(text, count, deadlineAt) {
+    const n = ns();
+    n.goals.push({
+      id: "g" + Date.now() + Math.floor(Math.random() * 1000),
+      text, target: count, done: 0,
+      deadlineAt, completedAt: null, expired: false,
+    });
+    Store.save();
+    render();
+  }
+
+  function tickGoal(g) {
+    const n = ns();
+    if (g.expired || g.completedAt) return;
+    g.done += 1;
+    n.xp += GOAL_TICK_XP;
+    let xp = GOAL_TICK_XP;
+    let finished = false;
+    if (g.done >= g.target && Date.now() <= g.deadlineAt) {
+      g.completedAt = Date.now();
+      n.xp += GOAL_BONUS_XP;
+      xp += GOAL_BONUS_XP;
+      finished = true;
+    }
+    Store.save();
+    const leveled = Store.addXp(xp, "night");
+    if (finished) {
+      if (Store.awardBadge("called-shot")) {
+        const b = QuestData.badges.find(x => x.id === "called-shot");
+        if (b) UI.badgeModal(b);
+      } else {
+        UI.modal(UI.el("div", { class: "levelup" }, [
+          UI.el("div", { class: "lv-big", text: "🎯" }),
+          UI.el("div", { class: "lv-title", text: "Called it." }),
+          UI.el("div", { class: "lv-sub", text: `"${g.text}" — ${g.target}/${g.target} with time to spare. +${GOAL_BONUS_XP} bonus XP.` }),
+          UI.el("button", { class: "btn primary block", style: "margin-top:16px", text: "Keep rolling", onclick: UI.closeModal }),
+        ]));
+      }
+    }
+    UI.xpToast(xp, leveled);
+    render();
+  }
+
+  function goalModal(isShiftStart) {
+    const n = ns();
+    if (!n.active) return;
+    let mode = "rel", mins = 30;
+
+    const textInput = UI.el("input", { type: "text", placeholder: "e.g. Talk to new guys" });
+    const countSel = UI.el("select", {}, [1,2,3,4,5,6,7,8,9,10].map(v =>
+      UI.el("option", { value: String(v), text: String(v), ...(v === 3 ? { selected: "" } : {}) })));
+    const timeInput = UI.el("input", { type: "time", value: "01:00", style: "display:none" });
+
+    const minsRow = UI.el("div", { class: "seg-row" },
+      [15, 30, 60, 90].map(v => UI.el("button", {
+        class: `seg ${v === 30 ? "on" : ""}`, text: `${v}m`,
+        onclick: (e) => { mins = v; minsRow.querySelectorAll(".seg").forEach(b => b.classList.remove("on")); e.target.classList.add("on"); },
+      })));
+    const modeRow = UI.el("div", { class: "seg-row", style: "margin-bottom:8px" }, [
+      UI.el("button", { class: "seg on", text: "In the next…", onclick: (e) => { mode = "rel"; setMode(e.target); } }),
+      UI.el("button", { class: "seg", text: "By a time", onclick: (e) => { mode = "abs"; setMode(e.target); } }),
+    ]);
+    function setMode(btn) {
+      modeRow.querySelectorAll(".seg").forEach(b => b.classList.remove("on"));
+      btn.classList.add("on");
+      minsRow.style.display = mode === "rel" ? "" : "none";
+      timeInput.style.display = mode === "abs" ? "" : "none";
+    }
+
+    const presetWrap = UI.el("div", { style: "display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px" },
+      GOAL_PRESETS.map(p => UI.el("button", {
+        class: "chip", style: "cursor:pointer",
+        text: `${p.text} ×${p.count}`,
+        onclick: () => {
+          textInput.value = p.text;
+          countSel.value = String(p.count);
+          if (p.mode === "abs") { mode = "abs"; timeInput.value = p.time; setMode(modeRow.querySelectorAll(".seg")[1]); }
+          else { mode = "rel"; mins = p.mins; setMode(modeRow.querySelectorAll(".seg")[0]);
+                 minsRow.querySelectorAll(".seg").forEach(b => b.classList.toggle("on", b.textContent === p.mins + "m")); }
+        },
+      })));
+
+    const wrap = UI.el("div", {}, [
+      UI.el("h3", { text: isShiftStart ? "🎯 Call your shots?" : "🎯 New night goal" }),
+      UI.el("p", { class: "muted", style: "margin:6px 0 12px; line-height:1.5; font-size:.85rem",
+        text: "A target with a deadline — every +1 pays 10 XP instantly, hit the number before the clock for +50. Add as many as you want." }),
+      presetWrap,
+      UI.el("div", { class: "field" }, [UI.el("label", { text: "What counts as one?" }), textInput]),
+      UI.el("div", { class: "field" }, [UI.el("label", { text: "How many" }), countSel]),
+      UI.el("div", { class: "field" }, [UI.el("label", { text: "Deadline" }), modeRow, minsRow, timeInput]),
+      UI.el("button", {
+        class: "btn primary block", text: "Add goal",
+        onclick: () => {
+          const text = textInput.value.trim();
+          if (!text) { UI.toast("Describe the goal first"); return; }
+          let deadlineAt;
+          if (mode === "rel") deadlineAt = Date.now() + mins * 60 * 1000;
+          else {
+            const [h, m] = timeInput.value.split(":").map(Number);
+            const d = new Date(); d.setHours(h, m, 0, 0);
+            if (d.getTime() <= Date.now()) d.setDate(d.getDate() + 1);
+            deadlineAt = d.getTime();
+          }
+          addGoal(text, parseInt(countSel.value, 10), deadlineAt);
+          UI.closeModal();
+        },
+      }),
+      UI.el("button", { class: "btn ghost block", style: "margin-top:8px", text: isShiftStart ? "Skip — just the timer tonight" : "Cancel", onclick: UI.closeModal }),
+    ]);
+    UI.modal(wrap);
+  }
+
+  function goalsCard(n) {
+    const wrap = UI.el("div", { class: "card" }, [
+      UI.el("div", { style: "display:flex; justify-content:space-between; align-items:center" }, [
+        UI.el("h3", { text: "🎯 Tonight's goals", style: "margin:0" }),
+        UI.el("button", { class: "btn small ghost", text: "＋ Add", onclick: () => goalModal(false) }),
+      ]),
+    ]);
+    if (!(n.goals || []).length) {
+      wrap.appendChild(UI.el("div", { class: "muted", style: "margin-top:8px", text: "No goals set — call a shot like \"talk to 3 new guys in the next 30 min\"." }));
+      return wrap;
+    }
+    for (const g of n.goals) {
+      const status = g.completedAt ? "✅" : g.expired ? "⌛" : "";
+      const row = UI.el("div", { class: `goal-row ${g.completedAt ? "hit" : ""} ${g.expired ? "exp" : ""}` }, [
+        UI.el("div", { class: "goal-info" }, [
+          UI.el("div", { class: "goal-text", text: `${status} ${g.text}` }),
+          UI.el("div", { class: "goal-meta", text: g.completedAt
+            ? `hit it at ${fmtClock(g.completedAt)} · +${GOAL_BONUS_XP} bonus`
+            : g.expired
+              ? `time's up — ${g.done}/${g.target}, XP for each one kept`
+              : `${g.done}/${g.target} · by ${fmtClock(g.deadlineAt)}` }),
+          UI.el("div", { class: "goal-dots" },
+            Array.from({ length: g.target }, (_, i) => UI.el("span", { class: `gdot ${i < g.done ? "lit" : ""}` }))),
+        ]),
+        (!g.completedAt && !g.expired) ? UI.el("button", { class: "tally-btn goal-plus", text: "+1", onclick: () => tickGoal(g) }) : null,
+      ]);
+      wrap.appendChild(row);
+    }
+    return wrap;
   }
 
   function resolve(didIt) {
@@ -181,7 +349,9 @@ const NightMode = (() => {
       n.xp += bonus;
       Store.addXp(bonus, "night");
     }
-    const summary = { done: n.done, passed: n.passed, bestCombo: n.bestCombo, xp: n.xp, mins: Math.round((Date.now() - n.startedAt) / 60000) };
+    const goalsHit = (n.goals || []).filter(g => g.completedAt).length;
+    const goalTicks = (n.goals || []).reduce((a, g) => a + g.done, 0);
+    const summary = { done: n.done, passed: n.passed, bestCombo: n.bestCombo, xp: n.xp, goalsHit, goalsTotal: (n.goals || []).length, goalTicks, mins: Math.round((Date.now() - n.startedAt) / 60000) };
     if (n.done >= 1 && Store.awardBadge("night-first")) { /* modal after summary */ }
     if (n.done >= 10) Store.awardBadge("night-ten");
 
@@ -194,6 +364,7 @@ const NightMode = (() => {
       UI.el("div", { class: "lv-big", text: summary.done >= 5 ? "🏆" : summary.done >= 1 ? "🌙" : "🤝" }),
       UI.el("div", { class: "lv-title", text: "Shift complete" }),
       UI.el("div", { class: "lv-sub", text: `${summary.done} actions · best combo ×${summary.bestCombo} · ${summary.passed} passes · ${summary.mins} min` }),
+      summary.goalsTotal ? UI.el("div", { class: "lv-sub", text: `🎯 goals: ${summary.goalsHit}/${summary.goalsTotal} hit · ${summary.goalTicks} total check-ins` }) : null,
       UI.el("div", { class: "lv-sub", style: "color:var(--gold); font-weight:800", text: `+${summary.xp} XP tonight${bonus ? " (incl. +30 shift bonus)" : ""}` }),
       summary.done === 0 ? UI.el("div", { class: "lv-sub", text: "Showing up still counts. Next shift, aim for one action." }) : null,
       UI.el("button", { class: "btn primary block", style: "margin-top:16px", text: "Done", onclick: UI.closeModal }),
@@ -299,6 +470,7 @@ const NightMode = (() => {
       UI.el("button", { class: "btn small", style: "margin-top:8px", text: "⚡ Give me one now", onclick: () => { ns().nextAt = Date.now(); Store.save(); render(); } }),
     ]));
 
+    pane.appendChild(goalsCard(n));
     pane.appendChild(statsCard(n));
     pane.appendChild(UI.el("button", { class: "btn danger block", text: "End shift", onclick: endSession }));
 
@@ -335,6 +507,7 @@ const NightMode = (() => {
       pane.appendChild(UI.el("button", { class: "btn ghost block", style: "margin-top:8px", text: "🛟 I'm frozen — make it smaller", onclick: panic }));
     }
 
+    pane.appendChild(goalsCard(n));
     pane.appendChild(statsCard(n));
     pane.appendChild(UI.el("button", { class: "btn danger block", text: "End shift", onclick: endSession }));
   }
