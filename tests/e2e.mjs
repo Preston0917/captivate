@@ -146,6 +146,72 @@ async function waitModalClosed(page) {
   );
 }
 
+/* ---------- rendered-contrast probe ----------
+   The UX review measured contrast on the REAL composited glass, not on CSS
+   colour tokens: blank the glyphs, screenshot, sample every backdrop pixel
+   under the text rect, and compute the WCAG ratio against the text colour.
+   Anything that reasons about `background-color` alone is blind to
+   backdrop-filter, so this is the only honest way to gate the chrome. */
+async function contrast(page, sels) {
+  const info = await page.evaluate(list => {
+    const out = [];
+    for (const s of list) {
+      const el = document.querySelector(s);
+      const r = el?.getBoundingClientRect();
+      if (!el || !r || r.width < 1 || r.height < 1) { out.push({ sel: s, missing: true }); continue; }
+      const cs = getComputedStyle(el);
+      out.push({ sel: s, color: cs.color, size: parseFloat(cs.fontSize), weight: cs.fontWeight,
+                 x: r.x, y: r.y, w: r.width, h: r.height });
+    }
+    const st = document.createElement("style");
+    st.id = "__blank_glyphs";
+    st.textContent = list.map(s => `${s},${s} *`).join(",") + "{color:transparent !important;text-shadow:none !important}";
+    document.head.appendChild(st);
+    return out;
+  }, sels);
+  await page.waitForTimeout(60);
+  const png = (await page.screenshot()).toString("base64");
+  await page.evaluate(() => document.getElementById("__blank_glyphs")?.remove());
+
+  return page.evaluate(async ({ b64, info, dpr }) => {
+    const img = new Image();
+    await new Promise(r => { img.onload = r; img.src = "data:image/png;base64," + b64; });
+    const cv = document.createElement("canvas");
+    cv.width = img.width; cv.height = img.height;
+    const g = cv.getContext("2d"); g.drawImage(img, 0, 0);
+    const lin = v => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+    const L = (r, gg, bb) => 0.2126 * lin(r) + 0.7152 * lin(gg) + 0.0722 * lin(bb);
+    return info.map(t => {
+      if (t.missing) return t;
+      const x = Math.max(0, Math.round(t.x * dpr)), y = Math.max(0, Math.round(t.y * dpr));
+      const w = Math.min(Math.round(t.w * dpr), cv.width - x), h = Math.min(Math.round(t.h * dpr), cv.height - y);
+      if (w < 1 || h < 1) return { sel: t.sel, missing: true };
+      const d = g.getImageData(x, y, w, h).data;
+      const [cr, cg, cb] = t.color.match(/[\d.]+/g).map(Number);
+      const Lt = L(cr, cg, cb);
+      let worst = Infinity, worstPx = null;
+      for (let i = 0; i < d.length; i += 4) {
+        const Lb = L(d[i], d[i + 1], d[i + 2]);
+        const v = (Math.max(Lt, Lb) + 0.05) / (Math.min(Lt, Lb) + 0.05);
+        if (v < worst) { worst = v; worstPx = [d[i], d[i + 1], d[i + 2]]; }
+      }
+      return { sel: t.sel, color: t.color, size: t.size, weight: t.weight,
+               worst: Math.round(worst * 100) / 100, worstPx };
+    });
+  }, { b64: png, info, dpr: 3 });
+}
+
+async function assertChromeContrast(page, where) {
+  // no emoji / coloured borders inside these three rects, so the single worst
+  // pixel is a fair gate — this is exactly what the review flagged.
+  const sels = ['.tab[data-pane="trainer"] .tab-label', ".hud-xp-label", ".hud-sub"];
+  for (const r of await contrast(page, sels)) {
+    assert(!r.missing, `${r.sel} not measurable (${where})`);
+    assert(r.worst >= 4.5,
+      `${where}: ${r.sel} renders at ${r.worst}:1 on the glass (needs 4.5) — text ${r.color} over ${r.worstPx}`);
+  }
+}
+
 async function closeAnyModal(page) {
   for (let i = 0; i < 4; i++) {
     const open = await page.locator("#modal-layer:not(.hidden)").count();
@@ -551,6 +617,143 @@ await step("11. desktop (1280) layout still works", async () => {
   assert(geo.bottom < geo.vh, "desktop tab bar is not floating above the bottom edge");
   await dp.screenshot({ path: path.join(SHOT_DIR, "11-desktop-1280-home.png"), fullPage: true });
   await desktop.close();
+});
+
+/* --- 12. UX-review blocker fixes stay fixed --- */
+await step("12. review fixes: toast over modal, blur budget, chrome contrast, quiz surfaces", async () => {
+  await page.goto(`${BASE}/index.html`, { waitUntil: "load" });
+  await page.waitForSelector("#pane-home.active .card", { timeout: 8000 });
+  await page.waitForTimeout(300);
+
+  /* 12a — a toast fired while a modal opens must still be visible.
+     UI.xpToast() does exactly this: toast(), then levelUpModal(). */
+  await page.evaluate(() => { UI.toast("+9 XP"); UI.levelUpModal(); });
+  await page.waitForSelector("#modal-layer:not(.hidden)", { timeout: 4000 });
+  await page.waitForSelector(".toast", { state: "attached", timeout: 3000 });
+  await page.waitForTimeout(400);
+
+  const layering = await page.evaluate(() => {
+    const t = document.querySelector(".toast");
+    const layer = document.getElementById("toast-layer");
+    const cs = getComputedStyle(t);
+    // #toast-layer is pointer-events:none, which makes elementFromPoint skip
+    // it — flip it on just for the hit test, then put it back.
+    const r = t.getBoundingClientRect();
+    const oldL = layer.style.pointerEvents, oldT = t.style.pointerEvents;
+    layer.style.pointerEvents = "auto"; t.style.pointerEvents = "auto";
+    const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+    layer.style.pointerEvents = oldL; t.style.pointerEvents = oldT;
+    return {
+      onTop: hit === t || t.contains(hit),
+      hitClass: hit ? (hit.className || hit.id || hit.tagName) : null,
+      backdropFilter: cs.backdropFilter || cs.webkitBackdropFilter || "none",
+      zToast: +getComputedStyle(document.getElementById("toast-layer")).zIndex,
+      zModal: +getComputedStyle(document.getElementById("modal-layer")).zIndex,
+      rect: { x: r.x, y: r.y, w: r.width, h: r.height },
+      opacity: +cs.opacity,
+    };
+  });
+  assert(layering.zToast > layering.zModal,
+    `#toast-layer (z${layering.zToast}) sits under #modal-layer (z${layering.zModal}) — level-up toasts are erased`);
+  assert(layering.onTop, `the toast is painted under "${layering.hitClass}" while a modal is open`);
+  assert(layering.opacity > 0.5, `the toast is only ${layering.opacity} opaque`);
+  assertEq(layering.backdropFilter, "none",
+    "the toast still blurs — that is a 4th simultaneous blur layer and it needs no backdrop to read");
+
+  // pixel proof: its gold rim must survive at full strength. If the modal
+  // backdrop were compositing over the toast, the gold would be washed out.
+  const rimSeen = await (async () => {
+    const b = (await page.screenshot({
+      clip: { x: layering.rect.x, y: layering.rect.y, width: layering.rect.w, height: layering.rect.h },
+    })).toString("base64");
+    return page.evaluate(async b64 => {
+      const img = new Image();
+      await new Promise(r => { img.onload = r; img.src = "data:image/png;base64," + b64; });
+      const cv = document.createElement("canvas");
+      cv.width = img.width; cv.height = img.height;
+      const g = cv.getContext("2d"); g.drawImage(img, 0, 0);
+      const d = g.getImageData(0, 0, cv.width, cv.height).data;
+      let best = 0;
+      for (let i = 0; i < d.length; i += 4) {
+        if (d[i] > 190 && d[i + 1] > 140 && d[i + 2] < 130) best++;
+      }
+      return best;
+    }, b);
+  })();
+  assert(rimSeen > 20, `the toast's gold rim is not rendering at full strength (${rimSeen} px) — something is compositing over it`);
+
+  await shot(page, "12-toast-over-modal", { fullPage: false });
+
+  /* 12b — blur budget with the worst-case stack alive: HUD + tab bar + modal
+     backdrop, toast up. Spec §5.3 caps it at 3. */
+  const blurs = await page.evaluate(() =>
+    [...document.querySelectorAll("*")].filter(el => {
+      if (!el.offsetParent && el !== document.body && getComputedStyle(el).position !== "fixed") return false;
+      const cs = getComputedStyle(el);
+      return /blur\(/.test(cs.backdropFilter || cs.webkitBackdropFilter || "");
+    }).map(el => el.className || el.id || el.tagName));
+  assert(blurs.length <= 3,
+    `${blurs.length} blurring layers with a modal + toast alive (budget is 3): ${blurs.join(", ")}`);
+  assert(blurs.some(c => String(c).includes("modal-backdrop")),
+    `the modal backdrop stopped blurring: ${blurs.join(", ")}`);
+
+  await closeAnyModal(page);
+  await page.waitForTimeout(3300);                    // let the toast self-remove
+
+  /* 12c — chrome text contrast on the real rendered glass */
+  await assertChromeContrast(page, "home top");
+  await page.evaluate(() => scrollTo(0, 300));
+  await page.waitForTimeout(350);
+  await assertChromeContrast(page, "home mid-scroll");
+  await page.evaluate(() => scrollTo(0, 0));
+  await openTab(page, "quests");
+  await page.evaluate(() => scrollTo(0, 340));
+  await page.waitForTimeout(350);
+  await assertChromeContrast(page, "quests mid-scroll");
+  await page.evaluate(() => scrollTo(0, 0));
+
+  /* 12d — trainer quiz reads as raised surfaces on the pane, not dark wells */
+  await openTab(page, "trainer");
+  await page.locator("#pane-trainer button", { hasText: "Start quiz" }).first().click();
+  await page.waitForSelector("#pane-trainer .quiz-opt", { timeout: 5000 });
+  const wellBg = "rgba(0, 0, 0, 0.22)";
+  const raised = await page.evaluate(() => {
+    const pick = el => {
+      const cs = getComputedStyle(el);
+      return {
+        parent: el.parentElement.id,
+        bg: cs.backgroundColor, bgImage: cs.backgroundImage,
+        radius: cs.borderTopLeftRadius, borderW: cs.borderTopWidth,
+        borderS: cs.borderTopStyle, shadow: cs.boxShadow,
+      };
+    };
+    return {
+      q: pick(document.querySelector("#pane-trainer .quiz-q")),
+      opt: pick(document.querySelector("#pane-trainer .quiz-opt")),
+    };
+  });
+  for (const [name, s] of Object.entries(raised)) {
+    assertEq(s.parent, "pane-trainer", `${name} is no longer a direct child of the pane — retune this check`);
+    assert(s.bg !== wellBg, `.quiz-${name} still paints the recessed-well fill (${s.bg}) directly on the aurora`);
+    assert(/linear-gradient/.test(s.bgImage), `.quiz-${name} has no lit card gradient (${s.bgImage})`);
+    assert(s.borderW === "1px" && s.borderS === "solid", `.quiz-${name} has no card border (${s.borderW} ${s.borderS})`);
+    assert(/inset/.test(s.shadow) && /rgba\(0, 0, 0/.test(s.shadow),
+      `.quiz-${name} has no rim + depth shadow (${s.shadow})`);
+  }
+  assertEq(raised.q.radius, "20px", ".quiz-q should use the 20px outer card radius");
+
+  // graded states keep the raised surface too
+  await page.locator("#pane-trainer .quiz-opt").first().click();
+  await page.waitForTimeout(250);
+  const gradedBg = await page.evaluate(() => {
+    const el = document.querySelector("#pane-trainer .quiz-opt.correct, #pane-trainer .quiz-opt.wrong");
+    const cs = getComputedStyle(el);
+    return { cls: el.className, bgImage: cs.backgroundImage, border: cs.borderTopColor };
+  });
+  assert((gradedBg.bgImage.match(/linear-gradient/g) || []).length >= 2,
+    `a graded quiz option lost its raised surface (${gradedBg.cls}: ${gradedBg.bgImage})`);
+  assert(gradedBg.border !== "rgb(50, 42, 78)", "a graded quiz option lost its state border colour");
+  await shot(page, "12-quiz-raised");
 });
 
 /* ---------- summary ---------- */

@@ -11,7 +11,11 @@
   --card-edge: #322a4e;
   --ink: #f0edfa;
   --ink-dim: #a99fc9;
-  --ink-faint: #6f6690;
+  /* Brightened 2026-07 after the UX review: the old #6f6690 could not reach
+     4.5:1 on ANY background (4.03:1 against pure black was its ceiling), so
+     every --ink-faint run measured 3.0–4.0 on card surfaces. Still clearly
+     secondary — it sits a step below --ink-dim, not level with it. */
+  --ink-faint: #9a92bb;
   --gold: #f5c451;
   --gold-deep: #c99a2e;
   --warm: #ff8a5c;      /* warmth-cue color */
@@ -26,7 +30,10 @@
   --hud-h: 64px;
 
   /* --- Liquid Glass material tokens (see docs/liquid-glass-ui-plan.md §3) --- */
-  --glass-tint:      rgba(36,31,56,.62);
+  /* Chrome tint deepened + raised from rgba(36,31,56,.62) after the UX review:
+     text on the HUD / tab bar measured 1.7–3.2:1 against bright content
+     scrolling under the glass (spec §5.7 — fix the tint, not the text). */
+  --glass-tint:      rgba(26,22,44,.84);
   --glass-tint-deep: rgba(14,11,26,.72);
   --glass-blur: 18px;
   --glass-sat: 165%;
@@ -48,7 +55,7 @@
 .glass-chrome,
 .hud,
 .tabbar {
-  background: linear-gradient(180deg, rgba(58,48,96,.42), var(--glass-tint));
+  background: linear-gradient(180deg, rgba(44,36,78,.62), var(--glass-tint));
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
           backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
   box-shadow: var(--rim), var(--hairline), var(--lift);
@@ -76,18 +83,19 @@
   box-shadow: var(--rim-soft), 0 6px 18px rgba(0,0,0,.32);
 }
 
-/* 3 — OVERLAY: modal backdrop + toasts. Heaviest blur, one at a time. */
+/* 3 — OVERLAY: modal backdrop. Heaviest blur, one at a time.
+   The toast uses the *colour-only* variant of this recipe (see .toast): it has
+   to stay legible while sitting ABOVE an open modal, and a fourth blurring
+   layer would blow the 3-layer budget in spec §5.3. */
 .glass-overlay,
-.modal-backdrop,
-.toast {
+.modal-backdrop {
   background: var(--glass-tint-deep);
   -webkit-backdrop-filter: blur(24px) saturate(140%);
           backdrop-filter: blur(24px) saturate(140%);
 }
 
-/* Fallbacks for these three recipes live at the very END of this file:
-   they are colour-only overrides and must out-order the .toast rule that
-   re-declares its own lighter blur. Nothing about layout changes there. */
+/* Fallbacks for these recipes live at the very END of this file:
+   they are colour-only overrides. Nothing about layout changes there. */
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -164,12 +172,15 @@ a { color: var(--violet); }
   animation: xp-sheen 1.1s cubic-bezier(.22,1,.36,1) .15s 1;
 }
 @keyframes xp-sheen { to { transform: translateX(100%); } }
-.hud-xp-label { font-size: 0.68rem; color: var(--ink-faint); margin-top: 3px; text-align: center; }
+/* chrome child: --ink-dim, not --ink-faint — see the note on .tab */
+.hud-xp-label { font-size: 0.68rem; color: var(--ink-dim); margin-top: 3px; text-align: center; }
 .hud-right { flex: none; }
+/* lit surface on chrome — same recipe as .btn / .tally-btn, capsule radius */
 .streak {
   font-weight: 700; font-size: 0.9rem;
-  padding: 6px 10px; border-radius: 10px;
-  background: var(--bg-3); border: 1px solid var(--card-edge);
+  padding: 6px 12px; border-radius: 999px;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
+  box-shadow: var(--rim);
 }
 .streak.hot { border-color: var(--warm); color: var(--warm); }
 
@@ -390,14 +401,19 @@ h2.pane-title { font-size: 1.25rem; margin-bottom: 4px; }
 .tab {
   position: relative;
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  color: var(--ink-faint); font-size: 0.62rem; font-weight: 700;
+  /* --ink-dim, not --ink-faint: 9.92px labels sit on the one surface whose
+     backdrop is live content, and even an opaque chrome tint could not carry
+     --ink-faint past 4.5:1 there. Recession is carried by the grayscale icon
+     filter + the gold .tab.active colour instead. */
+  color: var(--ink-dim); font-size: 0.62rem; font-weight: 700;
   transition: transform .12s cubic-bezier(.22,1,.36,1);
 }
 .tab:active { transform: scale(0.94); }
-/* active pill — CSS only, no DOM. 26 − 6 = 20 keeps the corners concentric. */
+/* active pill — CSS only, no DOM. 26 − 4 = 22 keeps the corners concentric
+   (the plan's §2.3 said 20px from "26 − 6"; the inset is 4px, so 22 is right). */
 .tab.active::before {
   content: ""; position: absolute; inset: 4px; z-index: -1;
-  border-radius: 20px;
+  border-radius: 22px;
   background: linear-gradient(180deg, rgba(245,196,81,.20), rgba(245,196,81,.08));
   box-shadow: inset 0 1px 0 rgba(255,255,255,.28);
   animation: tab-pill .2s cubic-bezier(.22,1,.36,1);
@@ -408,17 +424,19 @@ h2.pane-title { font-size: 1.25rem; margin-bottom: 4px; }
 .tab.active .tab-ico { filter: none; }
 
 /* ---------- Toasts ---------- */
+/* z 80 — ABOVE #modal-layer (70). UI.xpToast() fires a toast and then opens the
+   level-up modal, so a toast under the modal layer is a toast nobody ever sees. */
 #toast-layer {
   position: fixed; top: calc(var(--hud-h) + env(safe-area-inset-top) + 10px);
-  left: 0; right: 0; z-index: 60;
+  left: 0; right: 0; z-index: 80;
   display: flex; flex-direction: column; align-items: center; gap: 8px;
   pointer-events: none;
 }
-/* material: --glass-overlay at a lighter weight (spec §2.6) */
+/* material: --glass-overlay, colour-only variant (spec §2.6 + review fix).
+   No backdrop-filter: it now floats over the modal backdrop's blur, and the
+   blur budget (§5.3) is HUD + tab bar + modal backdrop = 3. */
 .toast {
-  background: rgba(36,31,56,.72); border: 1px solid var(--gold);
-  -webkit-backdrop-filter: blur(16px) saturate(170%);
-          backdrop-filter: blur(16px) saturate(170%);
+  background: rgba(18,14,34,.96); border: 1px solid var(--gold);
   color: var(--ink); font-weight: 700; font-size: 0.88rem;
   padding: 10px 18px; border-radius: 24px;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 6px 24px rgba(0,0,0,0.5);
@@ -755,6 +773,48 @@ h2.pane-title { font-size: 1.25rem; margin-bottom: 4px; }
 }
 .story-rung .rung-key,
 .gym-part .gp-box { border-radius: var(--radius-inner); }
+
+/* ============================================================
+   TRAINER QUIZ — the one odd-one-out. js/trainer.js appends
+   .quiz-q / .quiz-opt / .quiz-explain straight into #pane-trainer
+   with no parent card, so the recessed-well treatment above turned
+   them into dark holes punched in the aurora. Directly on a pane
+   they are figure over ground: raised lit surfaces, like every
+   other pane's cards. (Inside a card the well rules still apply.)
+   ============================================================ */
+.pane > .quiz-q,
+.pane > .quiz-explain,
+.pane > .quiz-opt {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,0) 42%),
+    linear-gradient(160deg, var(--bg-3), var(--card));
+  border: 1px solid var(--card-edge);
+  box-shadow: var(--rim-soft), 0 6px 18px rgba(0,0,0,.32);
+}
+.pane > .quiz-q {
+  border-radius: var(--radius);
+  padding: 14px var(--card-pad);
+}
+.pane > .quiz-explain {
+  border-radius: var(--radius);
+  padding: var(--card-pad);
+  border-left: 3px solid var(--violet);      /* keep the violet spine */
+}
+.pane > .quiz-opt { border-radius: var(--radius-inner); }
+.pane > .quiz-opt:hover { border-color: var(--violet); }
+/* graded states keep the raised surface — the tint layers over it */
+.pane > .quiz-opt.correct {
+  border-color: var(--good);
+  background:
+    linear-gradient(180deg, rgba(92,224,161,.20), rgba(92,224,161,.10)),
+    linear-gradient(160deg, var(--bg-3), var(--card));
+}
+.pane > .quiz-opt.wrong {
+  border-color: var(--danger);
+  background:
+    linear-gradient(180deg, rgba(255,92,122,.18), rgba(255,92,122,.09)),
+    linear-gradient(160deg, var(--bg-3), var(--card));
+}
 
 /* ============================================================
    MATERIAL FALLBACKS — colour only, zero layout change.

@@ -106,7 +106,8 @@ Becomes a **floating glass capsule**:
   `calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 34px)`. Verify last card is fully
   scrollable above the capsule.
 - Active tab: add a glass pill behind the icon via `.tab.active::before`
-  (CSS-only, no DOM): inset 4px, `border-radius: 20px` (= 26 − 6, concentric),
+  (CSS-only, no DOM): inset 4px, `border-radius: 22px` (= 26 − 4, concentric —
+  *corrected*: the original spec said 20px from "26 − 6", but the inset is 4px),
   `background: linear-gradient(180deg, rgba(245,196,81,.20), rgba(245,196,81,.08))`,
   `box-shadow: inset 0 1px 0 rgba(255,255,255,.28)`.
 - **Untouched:** flex layout, `.tab` typography, `.tab-ico` grayscale→color logic,
