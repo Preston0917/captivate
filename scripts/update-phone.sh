@@ -19,7 +19,7 @@ set -u -o pipefail
 readonly PROJECT="ios/App/App.xcodeproj"
 readonly SCHEME="App"
 # devicectl identifier (from `xcrun devicectl list devices`)
-readonly DEVICE_ID="F5FC53E8-4112-57CE-8745-4F03DC911BFC"
+readonly DEVICE_ID="AE26C9FD-41AA-5191-B394-F8DE102469D1"
 readonly DEVICE_NAME="iPhone"
 
 WAIT=1
@@ -102,12 +102,12 @@ resolve_app_path() {
   APP_PATH="$dir/$name"
 }
 
-# ---------- reachability (exact-match 'available'; see promoter notes) ----------
+# ---------- reachability: 'available' (WiFi) or 'connected' (cable) ----------
 device_available() {
   local line
   line="$(xcrun devicectl list devices 2>/dev/null | grep -F "$DEVICE_ID" | head -1)"
   [ -n "$line" ] || return 1
-  [[ "$line" =~ (^|[[:space:]])available([[:space:]]|\(|$) ]]
+  [[ "$line" =~ (^|[[:space:]])(available|connected)([[:space:]]|\(|$) ]]
 }
 
 wait_for_device() {
