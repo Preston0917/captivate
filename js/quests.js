@@ -142,17 +142,73 @@ const Quests = (() => {
     } else {
       card.appendChild(UI.el("div", { class: "quest-actions" }, [
         UI.el("button", { class: "btn primary small", text: "I did it ✔", onclick: () => completeQuest(q, isDaily) }),
-        q.tip ? UI.el("button", {
-          class: "btn ghost small", text: "How?",
-          onclick: () => UI.modal(UI.el("div", {}, [
-            UI.el("h3", { text: q.name }),
-            UI.el("p", { class: "muted", style: "line-height:1.6; margin-top:6px", text: q.tip }),
-            UI.el("button", { class: "btn primary block", text: "Got it", style: "margin-top:14px", onclick: UI.closeModal }),
-          ])),
+        (q.how || q.tip) ? UI.el("button", {
+          class: "btn ghost small", text: "How do I do this?",
+          onclick: () => howToModal(q),
         }) : null,
       ]));
     }
+    // Tally quests get a how-to button too (below the counter)
+    if (q.type === "tally" && !doneToday && (q.how || q.tip)) {
+      card.appendChild(UI.el("div", { class: "quest-actions", style: "margin-top:8px" }, [
+        UI.el("button", { class: "btn ghost small", text: "What am I looking for?", onclick: () => howToModal(q) }),
+      ]));
+    }
     return card;
+  }
+
+  // Rich how-to modal: steps, example lines, toggleable visual, real-photo link
+  function howToModal(q) {
+    const wrap = UI.el("div", {}, [
+      UI.el("h3", { text: q.name }),
+      UI.el("p", { class: "muted", style: "line-height:1.55; margin-top:6px; font-size:.85rem", text: q.desc }),
+    ]);
+
+    if (q.how && q.how.length) {
+      wrap.appendChild(UI.el("div", { class: "section-label", style: "margin-top:14px", text: "How to do it" }));
+      const ol = UI.el("ol", { class: "howto-steps" });
+      for (const step of q.how) ol.appendChild(UI.el("li", { text: step }));
+      wrap.appendChild(ol);
+    } else if (q.tip) {
+      wrap.appendChild(UI.el("p", { class: "muted", style: "line-height:1.6; margin-top:10px", text: q.tip }));
+    }
+
+    if (q.examples && q.examples.length) {
+      wrap.appendChild(UI.el("div", { class: "section-label", text: "Try saying" }));
+      for (const ex of q.examples) {
+        wrap.appendChild(UI.el("div", { class: "say-chip", text: "“" + ex + "”" }));
+      }
+    }
+
+    const demo = q.demo ? Demos.get(q.demo) : null;
+    if (demo) {
+      const demoBox = UI.el("div", { class: "demo-box hidden" });
+      if (demo.svg) demoBox.innerHTML = demo.svg;
+      else if (demo.html) demoBox.innerHTML = demo.html;
+      demoBox.appendChild(UI.el("div", { class: "demo-caption", text: demo.caption }));
+      const toggleBtn = UI.el("button", {
+        class: "btn small", style: "margin-top:12px",
+        text: "👁 Show me what it looks like",
+        onclick: () => {
+          const hidden = demoBox.classList.toggle("hidden");
+          toggleBtn.textContent = hidden ? "👁 Show me what it looks like" : "🙈 Hide the visual";
+        },
+      });
+      wrap.appendChild(toggleBtn);
+      wrap.appendChild(demoBox);
+    }
+
+    if (q.search || demo) {
+      const query = encodeURIComponent(q.search || (demo.title + " body language example"));
+      wrap.appendChild(UI.el("a", {
+        class: "photo-link", target: "_blank", rel: "noopener",
+        href: "https://www.google.com/search?tbm=isch&q=" + query,
+        text: "🔎 See real photos of this ↗",
+      }));
+    }
+
+    wrap.appendChild(UI.el("button", { class: "btn primary block", text: "Got it — let's go", style: "margin-top:14px", onclick: UI.closeModal }));
+    UI.modal(wrap);
   }
 
   function render() {
