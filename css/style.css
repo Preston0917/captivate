@@ -371,3 +371,25 @@ h2.pane-title { font-size: 1.25rem; margin-bottom: 4px; }
   text-decoration: none;
 }
 .photo-link:hover { text-decoration: underline; }
+
+/* ---------- Night Mode ---------- */
+.seg-row { display: flex; gap: 8px; }
+.seg {
+  flex: 1; padding: 10px 6px; border-radius: 10px;
+  background: var(--bg-2); border: 1px solid var(--card-edge);
+  font-weight: 700; font-size: 0.85rem; color: var(--ink-dim);
+}
+.seg.on { border-color: var(--gold); color: var(--gold); background: rgba(245, 196, 81, 0.08); }
+.night-wait { text-align: center; padding: 22px 14px; }
+.night-clock {
+  font-size: 3rem; font-weight: 800; color: var(--gold);
+  font-variant-numeric: tabular-nums; margin-top: 6px;
+}
+.night-prompt {
+  text-align: center; padding: 20px 16px;
+  background: linear-gradient(150deg, #2b1f4d, #1c1734);
+  border-color: var(--violet);
+}
+.night-prompt .np-icon { font-size: 40px; }
+.night-prompt .np-text { font-size: 1.05rem; font-weight: 700; line-height: 1.5; margin-top: 10px; }
+.night-prompt .say-chip { text-align: left; }

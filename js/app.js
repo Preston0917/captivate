@@ -6,6 +6,7 @@
   const PANES = {
     home: () => Home.render(),
     quests: () => Quests.render(),
+    night: () => NightMode.render(),
     trainer: () => Trainer.render(),
     skilltree: () => SkillTree.render(),
     analyzer: () => Analyzer.render(),
@@ -16,7 +17,9 @@
     document.querySelectorAll(".pane").forEach(p => p.classList.remove("active"));
     document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
     document.getElementById(`pane-${name}`).classList.add("active");
-    document.querySelector(`.tab[data-pane="${name}"]`).classList.add("active");
+    // Panes without a tab-bar button (e.g. night) highlight no tab
+    const tab = document.querySelector(`.tab[data-pane="${name}"]`);
+    if (tab) tab.classList.add("active");
     PANES[name]();
     window.scrollTo({ top: 0 });
   }

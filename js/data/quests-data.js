@@ -19,5 +19,8 @@ const QuestData = {
     { id: "boss-slayer",    icon: "🐉", name: "Boss Slayer",      desc: "Beat a weekly boss challenge." },
     { id: "perfect-quiz",   icon: "💯", name: "Perfect Recall",   desc: "Score 100% on a quiz deck." },
     { id: "first-analysis", icon: "🎙️", name: "On the Record",    desc: "Analyze your first conversation transcript." },
+    { id: "night-first",    icon: "🌙", name: "First Shift",      desc: "Complete an action in Night Mode." },
+    { id: "night-combo5",   icon: "⚡", name: "On a Heater",      desc: "Chain a ×5 combo in one night." },
+    { id: "night-ten",      icon: "🎆", name: "Life of the Party", desc: "10 actions in a single shift." },
   ],
 };

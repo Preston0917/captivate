@@ -24,6 +24,13 @@ const Home = (() => {
       ]));
     }
 
+    // Night Mode shortcut — the live-session mode
+    pane.appendChild(UI.el("div", { class: "card daily-spark", style: "border-color:var(--gold)" }, [
+      UI.el("div", { class: "spark-label", style: "color:var(--gold)", text: NightMode.active ? "🌙 Shift in progress" : "🌙 Night Mode" }),
+      UI.el("div", { class: "spark-text", text: NightMode.active ? "You're on the clock — jump back in." : "Working tonight? Get one small social mission at a time, on a timer." }),
+      UI.el("button", { class: "btn primary", style: "margin-top:10px", text: NightMode.active ? "Back to my shift" : "Start a shift", onclick: () => App.show("night") }),
+    ]));
+
     // Stats
     pane.appendChild(UI.el("div", { class: "stat-grid" }, [
       statTile(s.streak, "day streak"),
