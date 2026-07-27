@@ -438,6 +438,20 @@ await step("4d. setlist is seeded — identical across a reload", async () => {
   assert(seedStable, "Store.seededRandom is not deterministic for the night seed");
 });
 
+await step("4d2. auto-goal seed carries the shift index, so a 2nd shift can pick a different goal", async () => {
+  // Mirrors the setlist seed's own shape (`|night<shiftIndex>|set<setNo>`):
+  // the goal seed must vary with shiftIndex or every shift tonight repeats
+  // the same "imposed" goal (docs/adhd-ux-review.md §4 — the exact thing
+  // the Change escape hatch exists to fix, verified independent of it here).
+  const differs = await page.evaluate(() => {
+    const t = Store.todayKey();
+    const r0 = Store.seededRandom(`${t}|goal0`)();
+    const r1 = Store.seededRandom(`${t}|goal1`)();
+    return r0 !== r1;
+  });
+  assert(differs, "the goal seed ignores shiftIndex — every shift tonight would pick the same auto goal");
+});
+
 await step("4e. Swap replaces the mission in place — no list, no modal", async () => {
   const before = await nightState(page);
   const textBefore = await page.locator("#pane-night .np-text").innerText();
@@ -485,6 +499,64 @@ await step("4f. ✔ Did it pays XP; countdown ≤4 tappables, ≤35 words", asyn
   assert(await page.locator("#pane-night .goal-row .gdot.lit").count() >= 1, "goal +1 did not light a dot");
 });
 
+await step("4f2. auto-goal Change escape hatch: swap, remove, tappable budget, notif reschedule fires", async () => {
+  // Spy on the reschedule call site (web is !isNative, so the LocalNotifications
+  // call is already a no-op — this just proves the call site itself fires).
+  await page.evaluate(() => {
+    window.__reschedCount = 0;
+    window.__origResched = Native.rescheduleNotifications;
+    Native.rescheduleNotifications = (...a) => { window.__reschedCount++; return window.__origResched.apply(Native, a); };
+  });
+
+  const changeBtn = page.locator("#pane-night .goal-row .goal-change");
+  assertEq(await changeBtn.count(), 1, "the auto goal row offers no Change button");
+
+  const before = await nightState(page);
+  const oldGoalId = before.goals[0].id;
+
+  await changeBtn.click();
+  await page.waitForSelector("#modal-layer:not(.hidden)", { timeout: 3000 });
+  const modalText = await page.locator("#modal-card").innerText();
+  assert(modalText.includes("Change tonight's goal"), `Change did not open the replace-mode goal modal: ${modalText.slice(0, 80)}`);
+  assertEq(await page.locator("#modal-card button", { hasText: "No goal tonight" }).count(), 1,
+    "the Change modal has no free, no-penalty way to drop the goal");
+
+  const countBefore = await page.evaluate(() => window.__reschedCount);
+  await page.locator("#modal-card input[type=text]").fill("Say hi to three new people");
+  await page.locator("#modal-card .btn.primary", { hasText: "Replace goal" }).click();
+  await waitModalClosed(page);
+
+  const afterReplace = await nightState(page);
+  assertEq(afterReplace.goals.length, 1, "replacing the auto goal left more than one goal on the board");
+  assertEq(afterReplace.goals[0].text, "Say hi to three new people", "the replacement goal text was not saved");
+  assert(afterReplace.goals[0].id !== oldGoalId, "the old auto goal id is still on the board after replacing it");
+  assert(afterReplace.goals[0].auto, "the replacement lost its own Change-ability");
+  assert((await page.evaluate(() => window.__reschedCount)) > countBefore,
+    "replacing the goal did not fire Native.rescheduleNotifications — the stale 400-range pair would keep firing");
+
+  let taps = await countTappables(page, "#pane-night");
+  assert(taps <= 4, `countdown shows ${taps} tappables after a goal swap (cap is 4)`);
+  await shot(page, "04f2-night-goal-changed");
+
+  // "No goal tonight" — free, removes it, no replacement forced.
+  const countBeforeRemove = await page.evaluate(() => window.__reschedCount);
+  await page.locator("#pane-night .goal-row .goal-change").click();
+  await page.waitForSelector("#modal-layer:not(.hidden)", { timeout: 3000 });
+  await page.locator("#modal-card button", { hasText: "No goal tonight" }).click();
+  await waitModalClosed(page);
+
+  const afterRemove = await nightState(page);
+  assertEq(afterRemove.goals.length, 0, "\"No goal tonight\" did not remove the goal");
+  assertEq(await page.locator("#pane-night .goal-row").count(), 0, "a goal row is still on screen after removing the only goal");
+  assert((await page.evaluate(() => window.__reschedCount)) > countBeforeRemove,
+    "removing the goal did not fire Native.rescheduleNotifications");
+
+  taps = await countTappables(page, "#pane-night");
+  assert(taps <= 4, `countdown shows ${taps} tappables with no goal on the board (cap is 4)`);
+
+  await page.evaluate(() => { Native.rescheduleNotifications = window.__origResched; });
+});
+
 await step("4g. finishing the set auto-queues 3 more — no prompt, no modal", async () => {
   for (let i = 0; i < 2; i++) {                       // missions 2 and 3 of the set
     await page.locator("#pane-night button", { hasText: "Now" }).click();
@@ -515,6 +587,37 @@ await step("4h. end shift → summary, rep logged, pane back to setup", async ()
   assert(!(await page.evaluate(() => Store.state.night.active)), "the shift is still active after ending it");
   assert(await page.locator("#pane-night button", { hasText: "Start my shift" }).count() === 1,
     "night pane did not return to setup after ending the shift");
+});
+
+await step("4h2. a 2nd shift the same night gets its own auto goal, seeded and stable", async () => {
+  await page.locator("#pane-night button", { hasText: "Start my shift" }).click();
+  await page.waitForFunction(() => document.getElementById("pane-night").classList.contains("active") && Store.state.night.active, null, { timeout: 3000 });
+
+  const n = await nightState(page);
+  assertEq(n.shiftIndex, 1, "the 2nd shift tonight did not bump shiftIndex");
+  assertEq(n.goals.length, 1, "the 2nd shift did not auto-add its own goal");
+  assert(n.goals[0].auto, "the 2nd shift's auto goal is missing the auto flag");
+
+  // start() lands on the first mission, not the countdown — Pass it (free,
+  // per the review's "forgiving exits" rule) to reach the countdown, where
+  // the goal card and End shift live.
+  await page.locator("#pane-night button", { hasText: "Pass" }).click();
+  await page.waitForSelector("#pane-night .night-clock", { timeout: 3000 });
+
+  // same reload-stability proof used for the setlist seed (4d) — the goal
+  // seed persists per shift, it doesn't reshuffle on every render.
+  const before = n.goals[0].text;
+  await page.reload({ waitUntil: "load" });
+  await page.waitForSelector("#pane-home.active .card", { timeout: 8000 });
+  await page.evaluate(() => App.show("night"));
+  await page.waitForFunction(() => document.getElementById("pane-night").classList.contains("active"));
+  const after = await nightState(page);
+  assertEq(after.shiftIndex, 1, "shiftIndex did not survive the reload");
+  assertEq(after.goals[0].text, before, "the 2nd shift's auto goal reshuffled across a reload");
+
+  await page.locator("#pane-night .btn.danger", { hasText: "End shift" }).click();
+  await page.waitForSelector("#modal-layer:not(.hidden)", { timeout: 4000 });
+  await closeAnyModal(page);
 });
 
 await step("4i. a mid-shift save from the OLD schema still renders", async () => {

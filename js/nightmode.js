@@ -244,22 +244,44 @@ const NightMode = (() => {
     return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   }
 
-  function addGoal(text, count, deadlineAt, quiet) {
+  // opts: { quiet } skips the reschedule+render (start() does one at the
+  // end), { auto } marks the goal as the app's pick — auto goals get a
+  // "Change" escape hatch on the countdown, chosen ones don't need it.
+  function addGoal(text, count, deadlineAt, opts) {
     const n = ns();
+    const o = opts === true ? { quiet: true } : (opts || {});
     n.goals.push({
       id: "g" + Date.now() + Math.floor(Math.random() * 1000),
       text, target: count, done: 0,
       deadlineAt, completedAt: null, expired: false,
+      auto: !!o.auto,
     });
     Store.save();
-    if (quiet) return;                  // start() reschedules + renders once, at the end
+    if (o.quiet) return;                // start() reschedules + renders once, at the end
     Native.rescheduleNotifications();   // goal warning + deadline pings
     render();
   }
 
-  // Exactly one goal, called for you, seeded so it's the same all night.
+  // Drops a goal — "no goal tonight" (free, no penalty) and a Change-replace
+  // both go through here. Reschedule recomputes from n.goals as it stands,
+  // so the removed goal's warning/deadline pair is simply not re-sent.
+  function removeGoal(id, opts) {
+    const n = ns();
+    const idx = n.goals.findIndex(g => g.id === id);
+    if (idx === -1) return;
+    n.goals.splice(idx, 1);
+    Store.save();
+    if (opts && opts.quiet) return;
+    Native.rescheduleNotifications();   // drops the removed goal's notif pair
+    render();
+  }
+
+  // Exactly one goal, called for you, seeded so it's the same all night —
+  // shiftIndex is in the seed (mirrors the setlist seed) so a second shift
+  // the same night doesn't hand back the same goal.
   function autoGoal() {
-    const rand = Store.seededRandom(Store.todayKey() + "|goal");
+    const n = ns();
+    const rand = Store.seededRandom(`${Store.todayKey()}|goal${n.shiftIndex}`);
     const p = GOAL_PRESETS[Math.floor(rand() * GOAL_PRESETS.length)];
     let deadlineAt;
     if (p.mode === "abs") {
@@ -270,7 +292,7 @@ const NightMode = (() => {
     } else {
       deadlineAt = Date.now() + p.mins * 60 * 1000;
     }
-    addGoal(p.text, p.count, deadlineAt, true);
+    addGoal(p.text, p.count, deadlineAt, { quiet: true, auto: true });
   }
 
   function tickGoal(g) {
@@ -308,10 +330,15 @@ const NightMode = (() => {
     render();
   }
 
-  function goalModal() {
+  // replaceGoal: undefined = plain "add a goal" (still lives in here so the
+  // ability to stack a further goal survives without its own header button).
+  // A goal object = opened from that goal's "Change" — defaults to swapping
+  // it out, with a toggle to add alongside it instead, and a free exit.
+  function goalModal(replaceGoal) {
     const n = ns();
     if (!n.active) return;
     let mode = "rel", mins = 30;
+    let action = "replace";
 
     const textInput = UI.el("input", { type: "text", placeholder: "e.g. Talk to new guys" });
     const countSel = UI.el("select", {}, [1,2,3,4,5,6,7,8,9,10].map(v =>
@@ -347,45 +374,72 @@ const NightMode = (() => {
         },
       })));
 
+    const saveBtn = UI.el("button", {
+      class: "btn primary block", text: replaceGoal ? "Replace goal" : "Add goal",
+      onclick: () => {
+        const text = textInput.value.trim();
+        if (!text) { UI.toast("Describe the goal first"); return; }
+        let deadlineAt;
+        if (mode === "rel") deadlineAt = Date.now() + mins * 60 * 1000;
+        else {
+          const [h, m] = timeInput.value.split(":").map(Number);
+          const d = new Date(); d.setHours(h, m, 0, 0);
+          if (d.getTime() <= Date.now()) d.setDate(d.getDate() + 1);
+          deadlineAt = d.getTime();
+        }
+        const count = parseInt(countSel.value, 10);
+        if (replaceGoal && action === "replace") {
+          removeGoal(replaceGoal.id, { quiet: true });
+          addGoal(text, count, deadlineAt, { auto: true });   // still swappable later
+        } else {
+          addGoal(text, count, deadlineAt);
+        }
+        UI.closeModal();
+      },
+    });
+
+    // Only the Change flow needs the toggle — plain "add a goal" has
+    // nothing to swap against.
+    const actionRow = replaceGoal ? UI.el("div", { class: "seg-row", style: "margin-bottom:8px" }, [
+      UI.el("button", {
+        class: "seg on", text: "Swap it",
+        onclick: (e) => { action = "replace"; actionRow.querySelectorAll(".seg").forEach(b => b.classList.remove("on")); e.target.classList.add("on"); saveBtn.textContent = "Replace goal"; },
+      }),
+      UI.el("button", {
+        class: "seg", text: "Keep it, add another",
+        onclick: (e) => { action = "add"; actionRow.querySelectorAll(".seg").forEach(b => b.classList.remove("on")); e.target.classList.add("on"); saveBtn.textContent = "Add goal"; },
+      }),
+    ]) : null;
+
     const wrap = UI.el("div", {}, [
-      UI.el("h3", { text: "🎯 New night goal" }),
+      UI.el("h3", { text: replaceGoal ? "🎯 Change tonight's goal" : "🎯 New night goal" }),
       UI.el("p", { class: "muted", style: "margin:6px 0 12px; line-height:1.5; font-size:.85rem",
-        text: "+10 each. +50 if you hit the number in time." }),
+        text: replaceGoal
+          ? "Swap it for one that fits, or skip it — no penalty either way."
+          : "+10 each. +50 if you hit the number in time." }),
+      actionRow,
       presetWrap,
       UI.el("div", { class: "field" }, [UI.el("label", { text: "What counts as one?" }), textInput]),
       UI.el("div", { class: "field" }, [UI.el("label", { text: "How many" }), countSel]),
       UI.el("div", { class: "field" }, [UI.el("label", { text: "Deadline" }), modeRow, minsRow, timeInput]),
-      UI.el("button", {
-        class: "btn primary block", text: "Add goal",
-        onclick: () => {
-          const text = textInput.value.trim();
-          if (!text) { UI.toast("Describe the goal first"); return; }
-          let deadlineAt;
-          if (mode === "rel") deadlineAt = Date.now() + mins * 60 * 1000;
-          else {
-            const [h, m] = timeInput.value.split(":").map(Number);
-            const d = new Date(); d.setHours(h, m, 0, 0);
-            if (d.getTime() <= Date.now()) d.setDate(d.getDate() + 1);
-            deadlineAt = d.getTime();
-          }
-          addGoal(text, parseInt(countSel.value, 10), deadlineAt);
-          UI.closeModal();
-        },
-      }),
+      saveBtn,
+      replaceGoal ? UI.el("button", {
+        class: "btn ghost block", style: "margin-top:8px", text: "No goal tonight",
+        onclick: () => { removeGoal(replaceGoal.id); UI.toast("No goal tonight — you're covered."); UI.closeModal(); },
+      }) : null,
       UI.el("button", { class: "btn ghost block", style: "margin-top:8px", text: "Cancel", onclick: UI.closeModal }),
     ]);
     UI.modal(wrap);
   }
 
   function goalsCard(n) {
+    if (!n.goals.length) return null;   // "no goal tonight" — nothing left to show
     const wrap = UI.el("div", { class: "card" }, [
-      UI.el("div", { style: "display:flex; justify-content:space-between; align-items:center" }, [
-        UI.el("h3", { text: "🎯 Tonight's goals", style: "margin:0" }),
-        UI.el("button", { class: "btn small ghost", text: "＋ Add", onclick: () => goalModal() }),
-      ]),
+      UI.el("h3", { text: "🎯 Tonight's goals", style: "margin:0" }),
     ]);
     for (const g of n.goals) {
       const status = g.completedAt ? "✅" : g.expired ? "⌛" : "";
+      const live = !g.completedAt && !g.expired;
       const row = UI.el("div", { class: `goal-row ${g.completedAt ? "hit" : ""} ${g.expired ? "exp" : ""}` }, [
         UI.el("div", { class: "goal-info" }, [
           UI.el("div", { class: "goal-text", text: `${status} ${g.text}` }),
@@ -397,7 +451,10 @@ const NightMode = (() => {
           UI.el("div", { class: "goal-dots" },
             Array.from({ length: g.target }, (_, i) => UI.el("span", { class: `gdot ${i < g.done ? "lit" : ""}` }))),
         ]),
-        (!g.completedAt && !g.expired) ? UI.el("button", { class: "tally-btn goal-plus", text: "+1", onclick: () => tickGoal(g) }) : null,
+        live ? UI.el("div", { class: "goal-btns" }, [
+          UI.el("button", { class: "tally-btn goal-plus", text: "+1", onclick: () => tickGoal(g) }),
+          g.auto ? UI.el("button", { class: "btn small ghost goal-change", text: "Change", onclick: () => goalModal(g) }) : null,
+        ]) : null,
       ]);
       wrap.appendChild(row);
     }
@@ -572,7 +629,8 @@ const NightMode = (() => {
       UI.el("button", { class: "btn small", style: "margin-top:8px", text: "⚡ Now", onclick: () => { ns().nextAt = Date.now(); Store.save(); render(); } }),
     ]));
 
-    pane.appendChild(goalsCard(n));
+    const gc = goalsCard(n);
+    if (gc) pane.appendChild(gc);
     pane.appendChild(UI.el("button", { class: "btn danger block", text: "End shift", onclick: endSession }));
 
     const total = n.cfg.interval * 60 * 1000;
