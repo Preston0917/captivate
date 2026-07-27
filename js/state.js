@@ -46,6 +46,7 @@ const Store = (() => {
     skillXp: {},               // skillId -> xp earned toward that skill
     badges: [],                // badgeId[]
     analyses: [],              // saved transcript analysis summaries (small)
+    gridPlacements: [],        // [{w,c,ts}] warmth×competence self-placements (0-10)
     customQuests: [],          // user-authored quests
     settings: {
       apiKey: "",                 // web only — the iOS wrap keeps it in the Keychain

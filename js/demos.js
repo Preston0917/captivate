@@ -2,6 +2,14 @@
    demos.js — original visual demos for quest techniques.
    Simple annotated SVG figures (no book imagery — the site is
    public). Quests reference these by id via quest.demo.
+
+   Two shapes of demo:
+     · static     — { title, caption, svg | html }
+     · interactive— { title, caption, interactive: true, mount(box) }
+   `mount` is called with the demo box AFTER it is in the DOM, so it
+   can measure, listen for pointers, and read/write the save. Demos
+   are re-mounted fresh every time a how-to opens; nothing persists
+   in this module.
    ============================================================ */
 
 const Demos = (() => {
@@ -187,11 +195,204 @@ const Demos = (() => {
         ${LBL(130, 145, "same energy, mirrored — after a beat")}
       `),
     },
+    "space-zones": {
+      // The event-zone map (zones-map) is about WHERE to stand in a venue.
+      // This one is proxemics: how CLOSE you stand, and what a bridge is.
+      title: "Space Zones — and the Bridge",
+      caption: "Intimate, personal, social, public. A bridge crosses a zone with one limb or an object instead of your whole body.",
+      svg: wrap(`
+        <circle cx="80" cy="88" r="60" ${S} stroke-width="1.5" opacity="0.3"/>
+        <circle cx="80" cy="88" r="42" ${S} stroke-width="1.5" opacity="0.45"/>
+        <circle cx="80" cy="88" r="24" ${S} stroke-width="1.5" opacity="0.65"/>
+        ${HEAD(80, 88, 9)}
+        ${LBL(80, 108, "intimate")} ${LBL(80, 126, "personal")} ${LBL(80, 152, "social")}
+        ${LBL(30, 26, "public", "start")}
+        ${HEAD(210, 78, 11)}<line x1="210" y1="89" x2="210" y2="130" ${S}/>
+        <line x1="210" y1="98" x2="176" y2="104" ${S}/>
+        <ellipse cx="170" cy="105" rx="7" ry="5" ${S} stroke-width="2"/>
+        ${ARROW(196, 118, 152, 112)}
+        ${LBL(200, 150, "one arm crosses,")} ${LBL(200, 162, "not your whole body")}
+      `),
+    },
+    "charisma-grid": {
+      title: "Warmth × Competence",
+      caption: "Tap the square to place yourself. Warmth runs across, competence runs up — the top-right corner is the charisma zone.",
+      interactive: true,
+      mount: (box) => mountGrid(box),
+    },
   };
+
+  /* ==========================================================
+     THE GRID — interactive warmth × competence placement.
+     Zone ids match analyzer.js so a past analysis can be
+     plotted on exactly the same square.
+     ========================================================== */
+
+  const GRID_ZONES = {
+    danger_zone:        { name: "⚠️ Danger zone",       read: "Low warmth, low competence — easy to overlook.", nudge: "One warm cue moves you right: a real smile." },
+    warm_but_soft:      { name: "🧸 Warm but soft",     read: "Liked, but easy to talk over.",                  nudge: "Move up: level your pitch, bring one number." },
+    competent_but_cold: { name: "🧊 Competent but cold", read: "Respected, but not approached.",                 nudge: "Move right: one head tilt, one warm opener." },
+    charisma_zone:      { name: "⭐ Charisma zone",      read: "Warm and capable — both signals landing.",        nudge: "Hold it. Match whichever axis the room asks for." },
+  };
+
+  const zoneOf = (w, c) => (w >= 5
+    ? (c >= 5 ? "charisma_zone" : "warm_but_soft")
+    : (c >= 5 ? "competent_but_cold" : "danger_zone"));
+
+  const clamp10 = v => Math.max(0, Math.min(10, Math.round(v * 10) / 10));
+  const LEVELS = ["low", "mid", "high"];
+
+  // The save is the source of truth; old saves predate the key.
+  function placements() {
+    const s = Store.state;
+    if (!Array.isArray(s.gridPlacements)) s.gridPlacements = [];
+    return s.gridPlacements;
+  }
+
+  function mountGrid(box) {
+    const E = UI.el;
+    const past = placements().slice();          // ghosts = everything before this visit
+    let mine = null;                            // this visit's entry, updated in place
+    let dragging = false;
+
+    const plane = E("div", { class: "cg-plane" });
+    plane.innerHTML =
+      '<svg class="cg-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
+      '<rect class="cg-z" data-z="competent_but_cold" x="0" y="0" width="50" height="50"/>' +
+      '<rect class="cg-z" data-z="charisma_zone" x="50" y="0" width="50" height="50"/>' +
+      '<rect class="cg-z" data-z="danger_zone" x="0" y="50" width="50" height="50"/>' +
+      '<rect class="cg-z" data-z="warm_but_soft" x="50" y="50" width="50" height="50"/>' +
+      '<line class="cg-mid" x1="50" y1="0" x2="50" y2="100"/>' +
+      '<line class="cg-mid" x1="0" y1="50" x2="100" y2="50"/>' +
+      '</svg>';
+
+    // Corner names, in the app's own words (same labels the analyzer uses)
+    for (const [z, pos] of [["competent_but_cold", "tl"], ["charisma_zone", "tr"],
+                            ["danger_zone", "bl"], ["warm_but_soft", "br"]]) {
+      plane.appendChild(E("div", { class: `cg-zlabel cg-${pos}`, "data-z": z, text: GRID_ZONES[z].name }));
+    }
+
+    // Accessible fallback: nine real buttons. Pointer taps are handled by the
+    // plane (finer), so these only fire for keyboard activation (detail === 0).
+    const cells = E("div", { class: "cg-cells" });
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        const w = [1.7, 5, 8.3][col], c = [8.3, 5, 1.7][row];
+        cells.appendChild(E("button", {
+          type: "button", class: "cg-cell",
+          "aria-label": `${LEVELS[col]} warmth, ${LEVELS[2 - row]} competence`,
+          onclick: (e) => { if (e.detail === 0) { place(w, c); commit(); } },
+        }));
+      }
+    }
+    plane.appendChild(cells);
+
+    // Ghost dots: faint = your own past placements, tiny = analyzed conversations
+    for (const p of past.slice(-6)) plane.appendChild(dot("cg-ghost", p.w, p.c));
+    const analyses = (Store.state.analyses || []).filter(a => a.warmth != null && a.competence != null);
+    for (const a of analyses.slice(-6)) plane.appendChild(dot("cg-tiny", a.warmth, a.competence));
+
+    const live = dot("cg-dot hidden", 5, 5);
+    plane.appendChild(live);
+
+    const readEl = E("div", { class: "cg-read", text: "Tap anywhere to place yourself." });
+    const nudgeEl = E("div", { class: "cg-nudge" });
+
+    const grid = E("div", { class: "cg" }, [
+      E("div", { class: "cg-frame" }, [
+        E("div", { class: "cg-yaxis", text: "Competence →" }),
+        plane,
+      ]),
+      E("div", { class: "cg-xaxis", text: "Warmth →" }),
+      readEl,
+      nudgeEl,
+      E("div", { class: "cg-words", text: "Warm: trustworthy, kind, team player. Competent: impressive, expert, capable." }),
+      past.length ? E("div", { class: "cg-legend", text: "Faint dots are where you put yourself before." }) : null,
+      analyses.length ? E("div", { class: "cg-legend", text: "Tiny dots come from your analyzed conversations." }) : null,
+    ]);
+    box.appendChild(grid);
+
+    function dot(cls, w, c) {
+      return E("div", { class: cls, style: `left:${w * 10}%; top:${(10 - c) * 10}%` });
+    }
+
+    function place(w, c) {
+      w = clamp10(w); c = clamp10(c);
+      live.style.left = `${w * 10}%`;
+      live.style.top = `${(10 - c) * 10}%`;
+      live.classList.remove("hidden");
+      const z = zoneOf(w, c);
+      live.dataset.z = z;
+      readEl.textContent = `${GRID_ZONES[z].name} — ${GRID_ZONES[z].read}`;
+      nudgeEl.textContent = GRID_ZONES[z].nudge;
+      plane.querySelectorAll(".cg-z, .cg-zlabel").forEach(n =>
+        n.classList.toggle("on", n.dataset.z === z));
+      live._w = w; live._c = c;
+    }
+
+    // One entry per visit: dragging around does not spam the save.
+    function commit() {
+      if (live._w == null) return;
+      const list = placements();
+      if (mine) { mine.w = live._w; mine.c = live._c; mine.ts = Date.now(); }
+      else {
+        mine = { w: live._w, c: live._c, ts: Date.now() };
+        list.push(mine);
+        if (list.length > 20) list.splice(0, list.length - 20);
+      }
+      Store.save();
+    }
+
+    function fromEvent(e) {
+      const r = plane.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      place(((e.clientX - r.left) / r.width) * 10, (1 - (e.clientY - r.top) / r.height) * 10);
+    }
+
+    plane.addEventListener("pointerdown", e => {
+      dragging = true;
+      try { plane.setPointerCapture(e.pointerId); } catch (err) { /* mouse in old webviews */ }
+      fromEvent(e);
+      e.preventDefault();
+    });
+    plane.addEventListener("pointermove", e => { if (dragging) fromEvent(e); });
+    const end = () => { if (!dragging) return; dragging = false; commit(); };
+    plane.addEventListener("pointerup", end);
+    plane.addEventListener("pointercancel", end);
+  }
+
+  /* ---------- rendering ---------- */
+
+  // Fills `box` with a demo. Static demos are innerHTML; interactive ones
+  // mount live nodes. Both get the caption underneath.
+  function render(id, box) {
+    const d = demos[id];
+    if (!d) return null;
+    box.innerHTML = "";
+    if (d.mount) d.mount(box);
+    else if (d.svg) box.innerHTML = d.svg;
+    else if (d.html) box.innerHTML = d.html;
+    box.appendChild(UI.el("div", { class: "demo-caption", text: d.caption }));
+    return d;
+  }
+
+  // Standalone: any surface can pop a demo without owning a quest.
+  function open(id) {
+    const d = demos[id];
+    if (!d) return;
+    const box = UI.el("div", { class: "demo-box" });
+    const sheet = UI.el("div", {}, [UI.el("h3", { text: d.title }), box]);
+    sheet.appendChild(UI.el("button", {
+      class: "btn primary block", style: "margin-top:14px", text: "Got it", onclick: UI.closeModal,
+    }));
+    UI.modal(sheet);
+    render(id, box);          // mount AFTER the box is in the DOM, so it can measure
+  }
 
   return {
     get(id) { return demos[id] || null; },
     has(id) { return !!demos[id]; },
     ids: Object.keys(demos),
+    render, open,
   };
 })();

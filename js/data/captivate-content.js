@@ -1107,7 +1107,8 @@ var CaptivateContent = {
     {
       id: "cap-q-sayno",
       name: "The Say No Quest",
-      desc: "Decline one upcoming event that sits on your survive list this week, and log the energy you saved.",
+      desc: "Decline one upcoming event you genuinely dread this week, and log the energy you saved.",
+      terms: ["lingo-thrive-survive"],
       icon: "🚫",
       xp: 30,
       type: "do",
@@ -1178,7 +1179,8 @@ var CaptivateContent = {
     {
       id: "cap-q-sparker1",
       name: "Sparker Swap",
-      desc: "Use one top-3 conversation sparker this week in place of \"what do you do?\" and log the reaction.",
+      desc: "Swap \"what do you do?\" for one of the tested sparkers below this week, and log the reaction.",
+      terms: ["lingo-sparker", "lingo-big-talk"],
       icon: "⚡",
       xp: 25,
       type: "do",
@@ -1387,7 +1389,8 @@ var CaptivateContent = {
     {
       id: "cap-q-selfmatrix",
       name: "Self-Matrix Quest",
-      desc: "Complete your own OCEAN self-assessment, then have someone who knows you well rank you — and compare the two matrices.",
+      desc: "Rank yourself on the five personality traits, have someone who knows you rank you too, then compare.",
+      terms: ["lingo-ocean", "lingo-the-matrix"],
       icon: "🧩",
       xp: 25,
       type: "do",
@@ -1410,7 +1413,8 @@ var CaptivateContent = {
     {
       id: "cap-q-speedread5",
       name: "Speed-Read Five",
-      desc: "Fill in matrix guesses for the five most important people in your life; verify one via the direct approach.",
+      desc: "Guess all five personality traits for the five most important people in your life; verify one by asking directly.",
+      terms: ["lingo-ocean", "lingo-the-matrix", "lingo-speed-read"],
       icon: "🔍",
       xp: 40,
       type: "do",
@@ -1435,7 +1439,8 @@ var CaptivateContent = {
     {
       id: "cap-q-langlab",
       name: "Language Lab",
-      desc: "Find your primary and secondary appreciation languages, then guess (and verify) the languages of your partner, best friend, and boss.",
+      desc: "Find your top two appreciation languages, then guess and verify them for your partner, best friend, and boss.",
+      terms: ["lingo-appreciation-languages"],
       icon: "💝",
       xp: 25,
       type: "do",
@@ -1485,7 +1490,8 @@ var CaptivateContent = {
     {
       id: "cap-q-valueaudit",
       name: "Value Audit",
-      desc: "Score yourself across the six resources and name your primary and secondary values — split by domain: professional, social, romantic.",
+      desc: "Score yourself on love, service, status, money, goods and information, then name your top two per life area.",
+      terms: ["lingo-primary-value"],
       icon: "💎",
       xp: 25,
       type: "do",
@@ -1530,6 +1536,7 @@ var CaptivateContent = {
       id: "cap-q-storystack",
       name: "Build Your Stack",
       desc: "Log five trigger topics, one sparking story for each, and one boomerang question for each.",
+      terms: ["lingo-story-stack", "lingo-boomerang"],
       icon: "📚",
       xp: 35,
       type: "do",
@@ -1655,7 +1662,8 @@ var CaptivateContent = {
     {
       id: "cap-q-antiperfect",
       name: "Anti-Perfect Bingo",
-      desc: "Complete three items from the anti-perfect list in one week: \"I don't know,\" \"I was wrong,\" \"what does that word mean?\"",
+      desc: "Say three of these out loud in one week: \"I don't know,\" \"I was wrong,\" \"what does that mean?\"",
+      terms: ["lingo-pratfall-effect", "lingo-spotlight-effect"],
       icon: "🎯",
       xp: 30,
       type: "tally",
@@ -1813,12 +1821,14 @@ var CaptivateContent = {
         "You two need to meet — Kai runs the wildest pop-up dinners in town."
       ],
       demo: "zones-map",
+      terms: ["lingo-event-zones", "lingo-sweet-spot", "lingo-sparker", "lingo-raving-intro"],
       search: "networking event people mingling bar"
     },
     {
       id: "cap-q-boss-cipher",
       name: "BOSS: Crack the Cipher",
-      desc: "Build the complete three-layer matrix for your Riser — OCEAN traits, primary + secondary appreciation language, primary value — then act on all three layers in a single week.",
+      desc: "Read one person on three layers — personality traits, appreciation language, primary value — then act on all three in a week.",
+      terms: ["lingo-riser", "lingo-the-matrix", "lingo-ocean", "lingo-appreciation-languages", "lingo-primary-value"],
       icon: "🗝️",
       xp: 150,
       type: "do",
@@ -1843,7 +1853,8 @@ var CaptivateContent = {
     {
       id: "cap-q-boss-experiment",
       name: "BOSS: The Attunement Experiment",
-      desc: "Pick your top three hacks from the entire branch, design one measurable mini-experiment for each, and run all three within a week — keep what wins.",
+      desc: "Pick the three techniques that worked best for you, design a measurable test for each, run all three this week.",
+      terms: ["lingo-attunement"],
       icon: "🔬",
       xp: 130,
       type: "do",

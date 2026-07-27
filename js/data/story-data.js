@@ -221,6 +221,7 @@ var StoryData = (function () {
         { name: "Grandplan", flavor: "Walks into a strange venue and owns the floor plan in about eleven seconds." },
       ],
       catch: "Before your next outing, pick your room and your exact spot in advance — then go stand there.",
+      demo: "zones-map",
       evo: standard(),
     },
     {
@@ -242,7 +243,8 @@ var StoryData = (function () {
         { name: "Dialla", flavor: "Reads which axis the room wants and turns the knob without announcing it." },
         { name: "Twinpeak", flavor: "Lives in the top-right corner and lends warmth or weight to whoever's short on it." },
       ],
-      catch: "Place yourself on the warmth/competence grid out loud to one person, and ask whether they'd put you there too.",
+      catch: "Place yourself on the grid below, say it out loud to one person, and ask whether they'd put you there too.",
+      demo: "charisma-grid",
       evo: common(),
     },
     {

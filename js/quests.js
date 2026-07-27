@@ -192,25 +192,45 @@ const Quests = (() => {
       }
     }
 
+    // Every artifact a step names — a grid, a map, a scale — ships inside the
+    // app: either as a demo you can open here, or as a glossary term you can tap.
     const demo = q.demo ? Demos.get(q.demo) : null;
     if (demo) {
       const demoBox = UI.el("div", { class: "demo-box hidden" });
-      if (demo.svg) demoBox.innerHTML = demo.svg;
-      else if (demo.html) demoBox.innerHTML = demo.html;
-      demoBox.appendChild(UI.el("div", { class: "demo-caption", text: demo.caption }));
+      const showText = demo.interactive ? "🫵 Open it here" : "👁 Show me what it looks like";
+      const hideText = demo.interactive ? "🙈 Hide it" : "🙈 Hide the visual";
+      let built = false;
       const toggleBtn = UI.el("button", {
-        class: "btn small", style: "margin-top:12px",
-        text: "👁 Show me what it looks like",
+        class: `btn small ${demo.interactive ? "primary" : ""}`, style: "margin-top:12px",
+        text: showText,
         onclick: () => {
           const hidden = demoBox.classList.toggle("hidden");
-          toggleBtn.textContent = hidden ? "👁 Show me what it looks like" : "🙈 Hide the visual";
+          // interactive demos measure themselves — only mount once visible
+          if (!hidden && !built) { built = true; Demos.render(q.demo, demoBox); }
+          if (!hidden) demoBox.scrollIntoView({ block: "nearest" });
+          toggleBtn.textContent = hidden ? showText : hideText;
         },
       });
       wrap.appendChild(toggleBtn);
       wrap.appendChild(demoBox);
     }
 
-    if (q.search || demo) {
+    if (q.terms && q.terms.length) {
+      wrap.appendChild(UI.el("div", { class: "section-label", text: "What these words mean" }));
+      wrap.appendChild(UI.el("div", { class: "quest-meta" },
+        q.terms.map(id => {
+          const t = Trainer.termById(id);
+          return t ? UI.el("button", {
+            class: "chip chip-btn", text: `${t.emoji || "🔤"} ${t.term}`,
+            onclick: () => { UI.closeModal(); Trainer.showTerm(id); },
+          }) : null;
+        })
+      ));
+    }
+
+    // Photo search is for real-world body language only — an in-app interactive
+    // has nothing to go look up.
+    if (q.search || (demo && !demo.interactive)) {
       const query = encodeURIComponent(q.search || (demo.title + " body language example"));
       wrap.appendChild(UI.el("a", {
         class: "photo-link", target: "_blank", rel: "noopener",

@@ -479,6 +479,7 @@ var StoryMode = (() => {
       body.appendChild(E("div", { class: "neon-catch", text: n.catch }));
       body.appendChild(E("div", { class: "quest-actions" }, [
         E("button", { class: "btn primary small", text: "I did it ✔", onclick: () => catchNeon(n.id) }),
+        demoBtn(n),
         E("button", {
           class: "btn ghost small", text: "Not yet",
           onclick: () => {
@@ -493,6 +494,18 @@ var StoryMode = (() => {
     }
     card.appendChild(body);
     return card;
+  }
+
+  // A catch that names an artifact ("place yourself on the grid") ships the
+  // artifact with it — same demos the quest how-tos use.
+  function demoBtn(n) {
+    if (!n.demo || !Demos.has(n.demo)) return null;
+    const d = Demos.get(n.demo);
+    return E("button", {
+      class: "btn ghost small",
+      text: d.interactive ? "🫵 Open it here" : "👁 Show me",
+      onclick: () => Demos.open(n.demo),
+    });
   }
 
   function openNeonSheet(id) {
@@ -534,6 +547,8 @@ var StoryMode = (() => {
       wrap.appendChild(E("div", { class: "section-label", text: "To catch it" }));
       wrap.appendChild(E("div", { class: "neon-catch", text: n.catch }));
       wrap.appendChild(E("div", { class: "story-note", text: "Its three forms stay blank until you've met it out there." }));
+      const db = demoBtn(n);
+      if (db) { db.className = "btn block"; db.style.marginTop = "12px"; wrap.appendChild(db); }
       wrap.appendChild(E("button", {
         class: "btn primary block", style: "margin-top:12px", text: "I did it ✔",
         onclick: () => { UI.closeModal(); catchNeon(n.id); },

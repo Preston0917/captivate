@@ -139,6 +139,33 @@ const Trainer = (() => {
     drawList(search.value);
   }
 
+  // Terms you can actually try, not just read. Keeps the glossary honest:
+  // if the app can show you the thing, the definition says so.
+  const TERM_DEMOS = {
+    "lingo-charisma-scale": "charisma-grid",
+    "lingo-danger-zone": "charisma-grid",
+    "lingo-charisma-dial": "charisma-grid",
+    "lingo-space-zones": "space-zones",
+    "lingo-nonverbal-bridge": "space-zones",
+    "lingo-event-zones": "zones-map",
+    "lingo-launch-stance": "launch-stance",
+    "lingo-microexpression": "microexpressions",
+    "lingo-steepling": "steeple",
+    "lingo-eyebrow-flash": "eyebrow-flash",
+    "lingo-fronting": "fronting",
+    "lingo-blocking": "no-blocking",
+    "lingo-mirroring": "mirroring",
+    "lingo-downward-inflection": "downward-inflection",
+    "lingo-gaze-zones": "eye-contact",
+    "lingo-expansion": "power-pose",
+  };
+
+  // Public: open a term straight from anywhere (a quest how-to, a story catch).
+  function showTerm(id) {
+    const t = termById(id);
+    if (t) termModal(t);
+  }
+
   function termModal(t) {
     const wrap = UI.el("div", {}, [
       UI.el("h3", { text: `${t.emoji || "🔤"} ${t.term}` }),
@@ -149,6 +176,16 @@ const Trainer = (() => {
       UI.el("div", { class: "section-label", text: "In real life" }),
       UI.el("div", { class: "say-chip", text: t.example }),
     ]);
+
+    const demoId = TERM_DEMOS[t.id];
+    if (demoId && Demos.has(demoId)) {
+      const d = Demos.get(demoId);
+      wrap.appendChild(UI.el("button", {
+        class: "btn small", style: "margin-top:10px",
+        text: d.interactive ? "🫵 Try it — place yourself" : "👁 Show me what it looks like",
+        onclick: () => { UI.closeModal(); Demos.open(demoId); },
+      }));
+    }
     const related = (t.related || []).map(termById).filter(Boolean);
     if (related.length) {
       wrap.appendChild(UI.el("div", { class: "section-label", text: "Related lingo" }));
@@ -296,5 +333,5 @@ const Trainer = (() => {
     draw();
   }
 
-  return { render, renderGlossary };
+  return { render, renderGlossary, showTerm, termById };
 })();

@@ -1122,6 +1122,197 @@ await step("13. no UI string over 20 words; quest cards lead with one sentence",
   await fsp.writeFile(path.join(SHOT_DIR, "density.json"), JSON.stringify(density, null, 2));
 });
 
+/* --- 14. self-contained quests: the warmth × competence grid --- */
+
+// Puts a specific quest on today's board and opens its how-to modal.
+// (The weekly boss renders above the dailies, so match the card by name.)
+async function openHowTo(page, questId) {
+  await closeAnyModal(page);
+  await openTab(page, "quests");
+  const name = await page.evaluate(id => {
+    Store.state.dailyQuests = { day: Store.todayKey(), ids: [id], done: [] };
+    Store.save();
+    Quests.render();
+    return Quests.questById(id).name;
+  }, questId);
+  await page.waitForTimeout(150);
+  const card = page.locator("#pane-quests .quest-card").filter({ hasText: name }).first();
+  await card.locator("button", { hasText: /^(How|What)$/ }).click();
+  await page.waitForSelector("#modal-layer:not(.hidden)", { timeout: 4000 });
+}
+
+// The grid is a component, not a page — shoot the component.
+async function gridShot(page, name) {
+  const cg = page.locator("#modal-card .cg");
+  await cg.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(80);
+  await cg.screenshot({ path: path.join(SHOT_DIR, `${name}.png`) });
+}
+
+async function openGrid(page) {
+  await page.locator("#modal-card button", { hasText: "Open it here" }).click();
+  await page.waitForSelector("#modal-card .cg-plane", { state: "visible", timeout: 4000 });
+  return page.locator("#modal-card .cg-plane");
+}
+
+// Places the dot at (fx, fy) as a fraction of the plane, mouse-style.
+async function tapGrid(page, plane, fx, fy) {
+  const b = await plane.boundingBox();
+  assert(b && b.width > 40, "the grid plane has no measurable box");
+  await plane.click({ position: { x: b.width * fx, y: b.height * fy } });
+  await page.waitForTimeout(120);
+  return b;
+}
+
+await step("14a. grid demo opens from the quest how-to; a tap places the dot and names the zone", async () => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openHowTo(page, "cues-q-scale-place");
+
+  // the how-to must offer the artifact its steps talk about, not just describe it
+  assertEq(await page.locator("#modal-card button", { hasText: "Open it here" }).count(), 1,
+    "the 'place yourself on the grid' quest does not ship the grid");
+  assertEq(await page.locator("#modal-card .photo-link").count(), 0,
+    "an interactive demo still offers a go-look-it-up photo link");
+
+  const plane = await openGrid(page);
+  assertEq(await page.locator("#modal-card .cg-cell").count(), 9,
+    "the keyboard/screen-reader cells are missing (drag would be the only way in)");
+  assert((await page.locator("#modal-card .cg-read").innerText()).toLowerCase().includes("tap"),
+    "the unplaced grid does not tell you what to do");
+  assert(!(await page.locator("#modal-card .cg-dot:not(.hidden)").count()), "a dot is showing before any placement");
+  await gridShot(page, "14a-grid-initial");
+
+  // high warmth, low competence → 🧸 Warm but soft
+  await tapGrid(page, plane, 0.8, 0.8);
+  assertEq(await page.locator("#modal-card .cg-dot:not(.hidden)").count(), 1, "the tap placed no dot");
+  const read = await page.locator("#modal-card .cg-read").innerText();
+  const nudge = await page.locator("#modal-card .cg-nudge").innerText();
+  assert(read.includes("Warm but soft"), `zone read did not update: "${read}"`);
+  assert(nudge.trim().length > 5, "the placement gave no nudge direction");
+  assertEq(await page.locator("#modal-card .cg-z.on").count(), 1, "no zone highlighted under the dot");
+
+  // the other corner reads differently — the grid is live, not a static picture
+  await tapGrid(page, plane, 0.2, 0.2);
+  const read2 = await page.locator("#modal-card .cg-read").innerText();
+  assert(read2.includes("Competent but cold"), `opposite corner read wrong: "${read2}"`);
+
+  await tapGrid(page, plane, 0.8, 0.8);
+  await gridShot(page, "14b-grid-placed");
+
+  const saved = await page.evaluate(() => Store.state.gridPlacements);
+  assertEq(saved.length, 1, `one visit should write one placement, got ${saved.length}`);
+  assert(Math.abs(saved[0].w - 8) < 0.8 && Math.abs(saved[0].c - 2) < 0.8,
+    `placement saved at w=${saved[0].w} c=${saved[0].c}, expected ~8/~2`);
+});
+
+await step("14b. the placement survives a reload and comes back as a ghost dot", async () => {
+  await page.reload({ waitUntil: "load" });
+  await page.waitForSelector("#pane-home.active .card", { timeout: 8000 });
+
+  const saved = await page.evaluate(() => Store.state.gridPlacements);
+  assertEq(saved.length, 1, "the placement did not survive the reload");
+
+  await openHowTo(page, "cues-q-scale-place");
+  await openGrid(page);
+  assertEq(await page.locator("#modal-card .cg-ghost").count(), 1,
+    "the previous placement did not come back as a faint ghost dot");
+  const left = await page.locator("#modal-card .cg-ghost").evaluate(n => n.style.left);
+  assert(Math.abs(parseFloat(left) - 80) < 8, `the ghost is at ${left}, expected ~80%`);
+  await gridShot(page, "14c-grid-ghost");
+
+  // a second visit appends rather than overwriting — that is the self-trend
+  const plane = page.locator("#modal-card .cg-plane");
+  await tapGrid(page, plane, 0.7, 0.25);
+  assertEq((await page.evaluate(() => Store.state.gridPlacements)).length, 2,
+    "the second visit did not append a new placement");
+  await closeAnyModal(page);
+});
+
+await step("14c. grid works with keyboard alone, and on desktop", async () => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await openHowTo(page, "cues-q-scale-place");
+  await openGrid(page);
+  const b = await page.locator("#modal-card .cg-plane").boundingBox();
+  assert(b.width > 150 && Math.abs(b.width - b.height) < 3, `grid is not square on desktop: ${b.width}×${b.height}`);
+
+  // cell 0 = top-left = low warmth, high competence → 🧊 Competent but cold
+  await page.locator("#modal-card .cg-cell").first().focus();
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(120);
+  const read = await page.locator("#modal-card .cg-read").innerText();
+  assert(read.includes("Competent but cold"), `keyboard placement read wrong: "${read}"`);
+  assertEq(await page.locator("#modal-card .cg-dot:not(.hidden)").count(), 1, "keyboard placement drew no dot");
+  await gridShot(page, "14d-grid-desktop-keyboard");
+  await closeAnyModal(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+});
+
+/* --- 15. the rest of the audit: dangling references now resolve in-app --- */
+await step("15a. quest how-tos link their jargon to the glossary term modal", async () => {
+  await openHowTo(page, "cues-q-scale-place");
+  const chip = page.locator("#modal-card .chip-btn").first();
+  assert(await chip.count(), "the quest names the Charisma Scale but offers no way to look it up");
+  const chipText = await chip.innerText();
+  await chip.click();
+  await page.waitForTimeout(200);
+  const title = await page.locator("#modal-card h3").innerText();
+  assert(title.includes("Charisma Scale"), `chip "${chipText}" opened "${title}" instead of the term`);
+  // .section-label is uppercased in CSS, and innerText honours text-transform
+  assert((await page.locator("#modal-card").innerText()).toLowerCase().includes("in real life"),
+    "the term modal opened without its definition body");
+  await shot(page, "15a-term-from-quest");
+
+  // …and the term modal hands you the interactive back
+  const tryIt = page.locator("#modal-card button", { hasText: "Try it" });
+  assertEq(await tryIt.count(), 1, "the Charisma Scale term has no 'Try it' affordance");
+  await tryIt.click();
+  await page.waitForSelector("#modal-card .cg-plane", { state: "visible", timeout: 4000 });
+  await closeAnyModal(page);
+});
+
+await step("15b. every audited quest resolves its artifacts; grid copy stays under 20 words", async () => {
+  // Fixed quests: each names an artifact and must now ship a demo or a term link.
+  const audited = await page.evaluate(() => {
+    const ids = ["cues-q-scale-place", "cues-q-lean-spot", "cues-q-dial-flip", "cues-q-bridge",
+                 "cues-q-boss-lietome", "cues-q-boss-chart-row", "cues-q-email-audit",
+                 "cap-q-sayno", "cap-q-sparker1", "cap-q-speedread5", "cap-q-selfmatrix",
+                 "cap-q-langlab", "cap-q-valueaudit", "cap-q-storystack", "cap-q-antiperfect",
+                 "cap-q-boss-cipher", "cap-q-boss-experiment", "cap-q-boss-room"];
+    return ids.map(id => {
+      const q = Quests.questById(id);
+      return { id, ok: !!q, demo: q && q.demo, terms: (q && q.terms) || [],
+               badTerms: ((q && q.terms) || []).filter(t => !Trainer.termById(t)),
+               badDemo: q && q.demo && !Demos.has(q.demo) };
+    });
+  });
+  for (const a of audited) {
+    assert(a.ok, `${a.id} vanished from the pool`);
+    assert(a.demo || a.terms.length, `${a.id} still names an artifact with nothing to open`);
+    assert(!a.badDemo, `${a.id} points at a demo that does not exist: ${a.demo}`);
+    assert(!a.badTerms.length, `${a.id} links dead glossary terms: ${a.badTerms.join(", ")}`);
+  }
+
+  // the bridge quest used to show the EVENT-zone map for a PROXEMICS step
+  assertEq(audited.find(a => a.id === "cues-q-bridge").demo, "space-zones",
+    "the nonverbal-bridge quest still illustrates itself with the wrong map");
+
+  // the grid is content, but it is UI copy too — hold it to the same 20-word cap
+  await openHowTo(page, "cues-q-scale-place");
+  await openGrid(page);
+  const long = await page.evaluate(() => {
+    const out = [];
+    const walk = document.createTreeWalker(document.querySelector("#modal-card .cg"), NodeFilter.SHOW_TEXT);
+    for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+      const s = n.textContent.trim();
+      const w = s.split(/\s+/).filter(x => /[A-Za-z0-9]/.test(x)).length;
+      if (w > 20) out.push(`${w}w: ${s.slice(0, 60)}`);
+    }
+    return out;
+  });
+  assert(!long.length, `grid copy over 20 words: ${long.join(" | ")}`);
+  await closeAnyModal(page);
+});
+
 /* ---------- summary ---------- */
 if (problems.length) {
   results.push({ name: "run-wide: zero console errors / failed requests", ok: false, ms: 0, err: problems.slice(0, 6).join(" | ") });

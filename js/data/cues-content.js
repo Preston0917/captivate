@@ -431,15 +431,17 @@ var CuesContent = {
   quests: [
     { id: "cues-q-scale-place", name: "Map Yourself", icon: "🗺️", xp: 30, type: "do", minLevel: 1,
       skill: "cues-scale", source: "Cues Ch.1",
-      desc: "Self-place on the Charisma Scale using the word-column test, then ask one trusted person to place you too.",
+      desc: "Place yourself on the warmth × competence grid in the app, then ask one trusted person where they'd put you.",
       tip: "Word test: warm = trustworthy, kind, team player; competent = impressive, powerful, expert. Compare the two placements.",
       how: [
-        "Sketch a quick 2x2 grid: warmth up the side, competence across the bottom.",
-        "Read the two word columns and pick whichever sounds more like you: trustworthy / kind / team player (warm) vs impressive / powerful / expert (competent).",
-        "Mark a dot for yourself — strong on one axis, both, or neither.",
-        "Ask one person who knows you well to place you on the same grid before you show them your dot.",
+        "Open the grid below — warmth runs across the bottom, competence runs up the side.",
+        "Pick the column that sounds more like you: trustworthy / kind / team player (warm) vs impressive / powerful / expert (competent).",
+        "Tap the square to drop your dot — strong on one axis, both, or neither. It saves.",
+        "Now hand your phone to someone who knows you well and let them place their dot before showing them yours.",
         "Compare the two dots: the gap between how you see yourself and how they see you is your training target."
       ],
+      demo: "charisma-grid",
+      terms: ["lingo-charisma-scale", "lingo-danger-zone"],
       examples: [
         "Random question — when we first met, did I come off more friendly or more like I knew my stuff?",
         "Be honest: am I more the warm one or the sharp one?",
@@ -449,6 +451,8 @@ var CuesContent = {
       skill: "cues-scale", source: "Cues Ch.1",
       desc: "Identify the warmth-vs-competence lean of 3 people you talk to regularly.",
       tip: "Warm-leaning people open with chitchat and stories; competent-leaning people want agendas, data, and no tangents.",
+      demo: "charisma-grid",
+      terms: ["lingo-charisma-scale"],
       how: [
         "Pick three people you talk to regularly — a coworker, a client, a friend.",
         "Listen to how each one opens: straight into small talk and stories reads warm; straight into plans, times, and numbers reads competent.",
@@ -460,8 +464,10 @@ var CuesContent = {
       skill: "cues-scale", source: "Cues Ch.1",
       desc: "In one interaction, deliberately dial up your NON-default axis — competence cues if you lean warm, warmth cues if you lean competent.",
       tip: "Warm-leaning: add data, downward inflection, a steeple. Competent-leaning: add a head tilt, a savor smile, a warm opener.",
+      demo: "charisma-grid",
+      terms: ["lingo-charisma-dial", "lingo-charisma-scale"],
       how: [
-        "Name your default lean first — most people already know which way they tilt.",
+        "Name your default lean first — open the grid below and place your dot if you're unsure.",
         "Pick one low-stakes conversation today to run the opposite setting.",
         "If you lean warm: sit taller, land your sentence endings at a level-or-falling pitch, bring one concrete number or plan, and rest your hands in a steeple instead of fidgeting.",
         "If you lean competent: open with a personal question, tilt your head while they answer, and let a real smile arrive before any business talk.",
@@ -553,7 +559,8 @@ var CuesContent = {
         "Check this out real quick.",
         "This one's for you."
       ],
-      demo: "zones-map",
+      demo: "space-zones",
+      terms: ["lingo-nonverbal-bridge", "lingo-space-zones"],
       search: "personal space zones proxemics diagram" },
     { id: "cues-q-front-day", name: "Full Fronting Day", icon: "🧍", xp: 35, type: "do", minLevel: 1,
       axis: "warm", skill: "cues-warmth-body", source: "Cues Ch.3",
@@ -749,6 +756,7 @@ var CuesContent = {
       skill: "cues-verbal", source: "Cues Ch.9",
       desc: "Score your last 5 important sent emails for warm, competent, charismatic, and sterile words; rewrite the worst one at the same length.",
       tip: "Look for different registers per recipient — you are cueing each person how to treat you.",
+      terms: ["lingo-power-words", "lingo-charisma-scale"],
       how: [
         "Open your five most recent important sent emails or DMs.",
         "Highlight four kinds of words: warm (together, happy, we), competent (plan, results, data), charismatic (excited, team), and sterile filler that signals nothing.",
@@ -817,11 +825,12 @@ var CuesContent = {
       search: "personal brand color palette examples" },
     { id: "cues-q-boss-lietome", name: "BOSS: Lie to Me", icon: "🎬", xp: 120, type: "do", minLevel: 3, boss: true,
       skill: "cues-danger", source: "Cues Ch.6",
-      desc: "Record yourself answering three prompts — a factual recall, an embarrassing true story, an invented story — then code your own tells against the 17-cue Danger Zone checklist.",
+      desc: "Record three answers — a true memory, a true embarrassing story, an invented one — then hunt your own tells on the tape.",
       tip: "Check lip purse, distancing, blocking, self-soothes, nose touch, shame — plus the vocal recheck: did you uptalk or drop volume on the lie? You are learning YOUR tells.",
+      terms: ["lingo-danger-zone", "lingo-blocking", "lingo-distancing", "lingo-self-soothing", "lingo-shame-cue", "lingo-uptalk"],
       how: [
         "Set up your phone camera and record three answers, about a minute each: a factual memory you know cold, an embarrassing story that's true, and a story you invent on the spot.",
-        "Watch the footage muted first — per answer, log every lip press, lean-away, barrier, self-touch, nose touch, and hand-to-forehead moment.",
+        "Watch the footage muted first — per answer, log every lip press, lean-away, barrier, self-touch, nose touch, and hand-to-forehead moment. Those six ARE the checklist.",
         "Watch again with sound: did your pitch curl upward or your volume drop anywhere in the invented story?",
         "Compare columns — cues that show up only in the lie, or only in the embarrassing truth, are your personal tells.",
         "Write down your top three tells; those are what you'll now catch in real time."
@@ -847,8 +856,9 @@ var CuesContent = {
       demo: "no-blocking" },
     { id: "cues-q-boss-chart-row", name: "BOSS: Full Chart Row", icon: "📊", xp: 100, type: "do", minLevel: 2, boss: true,
       skill: "cues-cycle", source: "Cues Conclusion",
-      desc: "Complete one full Cues Chart row for a cue of your choice: decode it 3 times in different scenarios, encode it 3 times, and write an internalize note on whether it feels like you.",
+      desc: "Take one cue all the way around the cycle: decode it 3 times, encode it 3 times, then decide whether it feels like you.",
       tip: "First try feels uncomfortable, second feels empowering, third you decide: keeper or not. Keep only cues that pass the feels-like-me test.",
+      terms: ["lingo-cue-cycle", "lingo-cue"],
       how: [
         "Pick one cue you care about — say the lean, the steeple, or the slow triple nod.",
         "Decode phase: catch other people using it three times, in three different settings, and jot who, where, and what it did.",
