@@ -16,6 +16,8 @@
    Env:   SHOT_DIR=/somewhere   screenshots land there
           PORT=4173             static server port
           HEADED=1              watch it run
+          CHROMIUM_PATH=/path   use a system Chromium instead of
+                                Playwright's own download
 
    Exits non-zero if any step fails, if the console logs an error,
    or if any request fails outside the deliberate offline step.
@@ -232,7 +234,10 @@ await fsp.mkdir(SHOT_DIR, { recursive: true });
 console.log(`serving ${ROOT} on ${BASE}`);
 console.log(`screenshots → ${SHOT_DIR}\n`);
 
-const browser = await chromium.launch({ headless: !process.env.HEADED });
+const browser = await chromium.launch({
+  headless: !process.env.HEADED,
+  executablePath: process.env.CHROMIUM_PATH || undefined,
+});
 const context = await browser.newContext({
   viewport: { width: 390, height: 844 },
   deviceScaleFactor: 3,

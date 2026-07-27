@@ -225,22 +225,22 @@ var CaptivateContent = {
           explain: "\"People who are fake\" won at 63%; \"people who show off\" was a distant second at 22%. Faking extroversion or enjoyment doesn't fool anyone."
         },
         {
-          q: "In Dr. Barbara Wild's experiments, how long did a happy or sad face need to be flashed to measurably shift a viewer's mood?",
-          options: ["500 milliseconds", "5 seconds", "30 seconds", "2 minutes"],
-          answer: 0,
-          explain: "Just 500 ms was enough — emotions are contagious, and our smile muscles unconsciously mimic surrounding smiles."
+          q: "Dr. Barbara Wild flashed happy and sad faces at viewers for a split second. What happened to the viewers?",
+          options: ["Nothing — the flashes were too fast to register", "Their own moods measurably shifted to match the face", "They got irritated by the flashing", "Only trained observers were affected"],
+          answer: 1,
+          explain: "A flash of just 500 milliseconds shifted viewers' moods — emotions are contagious, and our smile muscles unconsciously mimic surrounding smiles. The mood you bring is the mood the room catches."
         },
         {
-          q: "In the Body Language Quiz with 4,361+ takers, what share correctly spotted the one genuine smile among three fakes?",
-          options: ["23.4%", "50.1%", "86.9%", "99.9%"],
+          q: "In the Body Language Quiz with 4,361+ takers, one genuine smile was hidden among three fakes. How did people do at spotting it?",
+          options: ["Most were fooled by the fakes", "It was basically a coin flip", "The vast majority picked out the real one", "Only trained experts could tell"],
           answer: 2,
-          explain: "86.9% found the real smile — solid evidence that fake smiling doesn't fool people."
+          explain: "86.9% found the genuine smile — solid evidence that fake smiling doesn't fool people. If you're not feeling it, a relaxed neutral face beats a forced grin."
         },
         {
-          q: "At the 1944 Democratic convention, Truman skipped the stage and worked delegates one-on-one from side rooms. His vote count went from 319.5 to...",
-          options: ["500", "757", "1,031", "2,004"],
-          answer: 2,
-          explain: "He gained 712 votes in hours by working social sweet spots instead of the spotlight — the origin story of the sweet-spot strategy."
+          q: "At the 1944 convention, Truman won the nomination without ever taking the stage. What was his strategy?",
+          options: ["Gave the loudest speech", "Worked delegates one-on-one in side rooms ('social sweet spots')", "Paid for more ads", "Waited for the other candidates to fail"],
+          answer: 1,
+          explain: "He worked side-room sweet spots one conversation at a time and his count jumped from 319.5 to 1,031 votes in hours — proof that one-on-ones beat the spotlight."
         },
         {
           q: "Which event zone should you skip on arrival, according to the event map?",
@@ -249,16 +249,16 @@ var CaptivateContent = {
           explain: "The Start Zone (entry, check-in) is where anxiety peaks — people are distracted and bee-lining elsewhere. Start-Zone pouncers made the fewest connections in the card-collection data."
         },
         {
-          q: "In Ambady & Rosenthal's thin-slice study, how short could muted professor clips get while ratings still matched end-of-semester evaluations?",
-          options: ["2 seconds", "30 seconds", "2 minutes", "10 minutes"],
-          answer: 0,
-          explain: "Ratings held steady from 10 seconds down to 5 and then 2 — snap judgments form in about two seconds and stick."
+          q: "Ambady & Rosenthal showed people muted clips of professors, cutting them shorter and shorter. What did they discover about snap judgments?",
+          options: ["Ratings fell apart once clips got short", "Ratings stayed stable even at a couple of seconds — and matched end-of-semester evaluations", "People needed audio to judge accurately", "Snap judgments were usually wrong"],
+          answer: 1,
+          explain: "Thin-slicing: ratings held from 10 seconds down to 5 and then 2, and matched full-semester student evaluations. People size you up in about two seconds and rarely revise — the first nonverbal moments ARE the impression."
         },
         {
-          q: "In the TED talk analysis, the most-viewed speakers averaged how many hand gestures per 18-minute talk?",
-          options: ["272", "465", "150", "50"],
+          q: "In the TED talk analysis, what separated the most-viewed speakers from the least-viewed?",
+          options: ["They spoke louder and faster", "They used far more hand gestures", "They told more jokes", "They stood perfectly still for gravitas"],
           answer: 1,
-          explain: "Top talkers averaged 465 gestures versus 272 for the least viewed; stars like Temple Grandin topped 600+. Visible, busy hands build trust."
+          explain: "Top talkers averaged 465 gestures per 18-minute talk versus 272 for the least viewed; stars like Temple Grandin topped 600+. Visible, busy hands build trust."
         },
         {
           q: "Per the Carnegie Mellon study, what matters MOST to prospective clients' trust in a professional?",
@@ -273,10 +273,10 @@ var CaptivateContent = {
           explain: "Even athletes who have never seen a victory pose expand in pride, while losers slump — winner and loser body language is innate and universal."
         },
         {
-          q: "Per Michael Argyle's research, Westerners hold eye contact on average what percent of a conversation?",
-          options: ["31%", "51%", "61%", "91%"],
-          answer: 2,
-          explain: "61% on average — 41% while talking and 75% while listening. Aim for roughly 60-70% gaze for rapport."
+          q: "Per Michael Argyle's research, how does natural eye contact split between talking and listening?",
+          options: ["More gaze while talking, less while listening", "More gaze while listening, less while talking", "Constant, unbroken gaze both ways", "Almost no gaze either way"],
+          answer: 1,
+          explain: "Westerners average 61% gaze overall — about 41% while talking but 75% while listening. Aim for roughly 60-70% total; noting their eye color gets you there without staring."
         },
         {
           q: "What is the correct handshake, per the chapter?",
@@ -313,10 +313,10 @@ var CaptivateContent = {
       skill: "cap-highlight",
       questions: [
         {
-          q: "Roughly what share of normal verbal output do humans spend on self-disclosure?",
-          options: ["5-10%", "30-40%", "60-70%", "90%"],
-          answer: 1,
-          explain: "30-40% in conversation — and it balloons to about 80% on social media. Talking about ourselves fires the brain's dopamine reward system."
+          q: "Humans spend a big chunk of conversation talking about themselves. What happens to that share on social media?",
+          options: ["It shrinks — people get guarded in public", "It stays about the same", "It balloons to roughly double", "Nobody has measured it"],
+          answer: 2,
+          explain: "Self-disclosure runs 30-40% of normal speech and balloons to about 80% of social media output. Talking about ourselves fires the brain's dopamine reward system — so the person who asks and listens becomes the favorite."
         },
         {
           q: "In Harvard fMRI work by Tamir & Mitchell, what did participants do to keep talking about themselves?",
@@ -325,10 +325,10 @@ var CaptivateContent = {
           explain: "People would give up money for the chance to self-disclose — which is why getting others talking about themselves makes you memorable."
         },
         {
-          q: "Voters randomly labeled \"politically active\" turned out to vote how much more?",
-          options: ["2% more", "15% more", "40% more", "No change"],
+          q: "Researchers randomly told some voters they were \"politically active\" citizens. What happened at the polls?",
+          options: ["Nothing — labels don't change behavior", "The labeled voters turned out at a meaningfully higher rate", "The labeled voters got annoyed and stayed home", "Only already-active voters were affected"],
           answer: 1,
-          explain: "A 15% turnout boost from a random label — the Pygmalion effect: positive labels shape behavior toward the expectation."
+          explain: "Turnout jumped 15% from a purely random label — the Pygmalion effect: people rise toward the labels you hand them. Tell someone they're a great networker and watch them become one."
         },
         {
           q: "What was Major Schrank's Air Force Academy experiment evidence for?",
@@ -337,10 +337,10 @@ var CaptivateContent = {
           explain: "Airmen randomly assigned fake low \"ability levels\" performed worst across every data set — low expectations produce poor performance (the golem effect, Pygmalion's dark inverse)."
         },
         {
-          q: "Under Alfred P. Sloan's listening-driven leadership, GM's market share went from 12% in 1920 to what by 1956?",
-          options: ["Over 52%", "20%", "33%", "It fell to 8%"],
-          answer: 0,
-          explain: "Over 52%. Sloan attended meetings almost silently, asked only clarifying questions, summarized, then sent a memo naming one accountable owner and a deadline."
+          q: "How did Alfred P. Sloan run GM meetings during the era its market share more than quadrupled?",
+          options: ["He dominated every discussion with his vision", "He listened almost silently, asked clarifying questions, summarized, then assigned one accountable owner", "He delegated meetings entirely and never attended", "He rotated the chair randomly to keep people sharp"],
+          answer: 1,
+          explain: "Silent Sloan listened with intent, then acted on what he heard — a follow-up memo named one owner, next steps, and a deadline. Under that style GM went from 12% market share in 1920 to over 52% by 1956."
         },
         {
           q: "What's the raving-introduction formula?",
@@ -367,10 +367,10 @@ var CaptivateContent = {
           explain: "Toyoda's root-cause tool. In conversation, successive whys move you from surface facts to motivations and dreams in a few exchanges."
         },
         {
-          q: "Lewis Howes' highest-reply cold messages named at least how many commonalities?",
-          options: ["One strong one", "Two", "Three", "Five"],
-          answer: 2,
-          explain: "Minimum three — a mutual connection, a mutual interest, and a mutual organization — kept short, ending with a specific answerable question."
+          q: "What made Lewis Howes' cold messages get replies from big-name strangers?",
+          options: ["A long, impressive bio of himself", "Naming several genuine commonalities and ending with a specific, answerable question", "Offering to pay for their time", "Messaging daily until they gave in"],
+          answer: 1,
+          explain: "His formula: minimum THREE commonalities — a mutual connection, a mutual interest, and a mutual organization — kept short, closing with one easy-to-answer question. It landed meetings with the ESPN cofounder."
         },
         {
           q: "In the dress-similarity study, who are people most likely to help?",
@@ -465,10 +465,10 @@ var CaptivateContent = {
           explain: "Contempt = scorn brewing: find the source, re-evaluate, and build rapport before it festers. (Anger is the \"opportunity\"; sadness calls for empathy.)"
         },
         {
-          q: "Per Todorov's Princeton research, how fast do online first impressions form from a photo?",
-          options: ["About 100 milliseconds", "About 3 seconds", "About 30 seconds", "About 5 minutes"],
-          answer: 0,
-          explain: "Roughly 100 ms — and different photos of the same person shift judged intelligence, trustworthiness, and attractiveness. Audit your profile photos for accidental contempt, squint-anger, or flash-blink fear."
+          q: "Per Todorov's Princeton research, what should you know about how people judge your photos?",
+          options: ["People study a photo carefully before judging", "Judgments form almost instantly — and different photos of the SAME person get very different verdicts", "Only attractiveness gets judged from photos", "Good lighting fixes most problems"],
+          answer: 1,
+          explain: "Impressions form in roughly 100 milliseconds, and different photos of the same person shift judged intelligence, trustworthiness, and attractiveness. Audit yours for accidental contempt-smirks, squint-anger, or flash-blink fear."
         },
         {
           q: "What is \"squelching\"?",
@@ -509,10 +509,10 @@ var CaptivateContent = {
           explain: "Dr. Lewis Goldberg nicknamed the five-factor model \"the Big Five\" in the 1980s. Each trait ranks high, low, or middle — and no ranking is \"best.\""
         },
         {
-          q: "Roughly what share of personality is genetically wired?",
-          options: ["5-10%", "35-50%", "70-80%", "Nearly 100%"],
+          q: "A big share of personality is genetically wired. What's the practical takeaway?",
+          options: ["With enough feedback, anyone can be remade", "Decode and predict people instead of trying to change them", "Personality is 100% fixed at birth", "Only childhood experiences shape traits"],
           answer: 1,
-          explain: "About 35-50% — which is why the strategy is decode, predict, and optimize rather than trying to change people."
+          explain: "Roughly 35-50% of personality is heritable, so changing people is a losing game. Speed-read the five traits, then optimize or compromise around them."
         },
         {
           q: "Someone in the middle of the extroversion scale is called...",
@@ -521,15 +521,15 @@ var CaptivateContent = {
           explain: "An ambivert. Middles are normal on every trait; ambiverts should think about which side they express the majority of the time."
         },
         {
-          q: "First impressions of personality are roughly how accurate — and which trait do we read WORST?",
+          q: "Which Big Five trait are first impressions WORST at reading — the one that needs verbal follow-up instead of a gut check?",
           options: [
-            "76% accurate; worst at neuroticism",
-            "50% accurate; worst at extroversion",
-            "90% accurate; worst at openness",
-            "30% accurate; worst at agreeableness"
+            "Extroversion",
+            "Conscientiousness",
+            "Neuroticism",
+            "Agreeableness"
           ],
-          answer: 0,
-          explain: "About 76% accurate. We're best at speed-guessing extroversion, conscientiousness, and agreeableness; neuroticism needs verbal follow-up, and openness reads best from someone's space."
+          answer: 2,
+          explain: "First impressions run about 76% accurate overall: gut checks nail extroversion, conscientiousness, and agreeableness, and openness reads from someone's space — but neuroticism hides until you ask questions like \"how's your week?\""
         },
         {
           q: "Per Sam Gosling's research, extroverts tend to decorate...",
@@ -577,10 +577,10 @@ var CaptivateContent = {
           explain: "1&6 = Words, 2&7 = Touch, 3&8 = Quality Time, 4&9 = Acts of Service, 5&10 = Gifts."
         },
         {
-          q: "Per Gallup-cited workplace stats, what share of managers believe people quit over money — versus how many actually do?",
-          options: ["88% believe it; only 12% actually do", "50% believe it; 50% do", "12% believe it; 88% do", "25% believe it; 75% do"],
-          answer: 0,
-          explain: "88% of managers blame money, but only about 12% leave for financial reasons — the top driver is not feeling appreciated. 65% of Americans report zero recognition at work in the past year."
+          q: "Managers overwhelmingly assume people quit jobs over money. What does the data actually show?",
+          options: ["They're right — pay drives most exits", "Only a small fraction leave for money; the top driver is not feeling appreciated", "People mostly quit over commutes and schedules", "Nobody quits a well-paying job"],
+          answer: 1,
+          explain: "88% of managers blame money, but only about 12% of leavers actually cite it — and 65% of Americans report zero recognition at work in the past year. Appreciation, delivered in the right language, is the real retention tool."
         },
         {
           q: "Gottman & Levenson found happier couples use which pronouns?",
@@ -672,16 +672,16 @@ var CaptivateContent = {
           explain: "After your anecdote, throw the conversation back — \"Have you ever seen a celebrity in real life?\" A group laugh is the best boomerang for audiences."
         },
         {
-          q: "In the Ikea-effect origami study, builders valued their own amateur creations at ~23 cents. What did non-builders value them at?",
-          options: ["About the same", "Under 5 cents", "About 50 cents", "Over a dollar"],
-          answer: 1,
-          explain: "Under 5¢ versus the makers' ~23¢ (near expert-level pieces). We overvalue what we build — so let people help build the thing and they'll fight for it."
+          q: "In the Ikea-effect origami study, how did builders value their own amateur creations compared to outsiders?",
+          options: ["Several times higher — near what expert work fetched", "Lower — they were embarrassed by them", "Exactly the same", "Builders refused to put a price on them"],
+          answer: 0,
+          explain: "Builders valued their own pieces around 23 cents — near expert-level work — while outsiders offered under 5. We overvalue what we build, so let people help build the thing and they'll fight for it."
         },
         {
-          q: "In Langer's copy-machine study, adding a MEANINGLESS reason (\"because I have to make copies\") pushed compliance from 60% to...",
-          options: ["61%", "75%", "93%", "99%"],
-          answer: 2,
-          explain: "93% — nearly matching the real reason's 94%. The word \"because\" itself triggers our purpose-driven wiring. Always give a because."
+          q: "In Langer's copy-machine study, what did adding a completely MEANINGLESS reason (\"because I have to make copies\") do to compliance?",
+          options: ["Nothing — people saw through it", "It nearly matched the effect of a real reason", "It backfired and annoyed people", "It only worked on friends"],
+          answer: 1,
+          explain: "Compliance jumped from 60% (bare request) to 93% with the nonsense reason — almost the real reason's 94%. The word \"because\" itself triggers our purpose-driven wiring. Always give a because."
         },
         {
           q: "What are the three ownership levers of Hack 11 (\"Own It!\")?",
@@ -706,10 +706,10 @@ var CaptivateContent = {
           explain: "It turns tasks skill-oriented instead of duty-oriented, and naming someone's known skill doubles as the Highlighter hack."
         },
         {
-          q: "In the Fast Fact poll, what share of respondents believe leaders are made, not born?",
-          options: ["About 20%", "About 50%", "Over 80%", "Under 10%"],
-          answer: 2,
-          explain: "Over 80% — consistent with the chapter's recipe: start with a passion, outline one goal, find a capable person, then give them resources and freedom."
+          q: "In the Fast Fact poll on leadership, which view won by a landslide?",
+          options: ["Leaders are born, not made", "Leaders are made, not born", "Leadership can't be learned as an adult", "Only extroverts can lead"],
+          answer: 1,
+          explain: "Over 80% said leaders are made — consistent with the chapter's recipe: start with a passion, outline one goal, find a capable person, then hand over resources and freedom."
         }
       ]
     },
@@ -722,10 +722,10 @@ var CaptivateContent = {
       skill: "cap-engage",
       questions: [
         {
-          q: "In the spotlight-effect study, students wearing an embarrassing Barry Manilow T-shirt estimated how many people noticed it?",
-          options: ["Half as many as actually did", "Twice as many as actually did", "Exactly the right number", "Nobody noticed at all"],
+          q: "Students were made to wear an embarrassing Barry Manilow T-shirt around campus. What did the spotlight-effect study find?",
+          options: ["Everyone noticed and remembered the shirt", "They drastically overestimated how many people noticed", "They guessed exactly right", "They underestimated the attention they drew"],
           answer: 1,
-          explain: "They overestimated by double. Nobody scrutinizes you as hard as you scrutinize yourself — your flubs are mostly invisible."
+          explain: "Wearers estimated about twice as many people noticed as actually did. Nobody scrutinizes you as hard as you scrutinize yourself — your flubs are mostly invisible."
         },
         {
           q: "In the pratfall study, how was the high performer who audibly spilled coffee on himself rated?",
@@ -746,15 +746,15 @@ var CaptivateContent = {
           explain: "That's #1; the second most common theme is belonging — wanting a community where no secrets are needed. Shared vulnerability creates instant bonds."
         },
         {
-          q: "How fast does the amygdala's Low Road fire compared to the logical High Road?",
+          q: "Per LeDoux's two-road model, why can't a person \"just calm down and be logical\" mid-meltdown?",
           options: [
-            "~12 ms versus ~30-40 ms later",
-            "~1 second versus ~5 seconds",
-            "Both fire simultaneously",
-            "~500 ms versus ~2 seconds"
+            "The amygdala's Low Road survival reflex fires well before the logical High Road can catch up",
+            "They're consciously choosing drama",
+            "Logic and emotion share one pathway, so neither works",
+            "Their hearing physically shuts down under stress"
           ],
           answer: 0,
-          explain: "The survival reflex wins by design (LeDoux). Emotional hijacking (Goleman) is when the Low Road blocks access to witty, rational High-Road behavior."
+          explain: "The Low Road fires in about 12 milliseconds; the reasoning High Road arrives 30-40 ms later. During emotional hijacking (Goleman) the Low Road blocks witty, rational behavior — difficult people are hijacked people, not bad people."
         },
         {
           q: "What does the NUT acronym stand for?",
@@ -818,10 +818,10 @@ var CaptivateContent = {
           explain: "Rejection and physical pain share circuitry — in the author's poll, 76% said a breakup would hurt more than a broken arm. Curiosity is framed as the protection."
         },
         {
-          q: "In the Fast Fact poll, what share of Twitter respondents say they have a toxic person in their life?",
-          options: ["12%", "38%", "73%", "95%"],
-          answer: 2,
-          explain: "73% — which is why the say-no protocol exists. The \"controlled burn\" frame: clearing toxic weeds makes room for growth."
+          q: "The Fast Fact poll asked people about toxic relationships. What did it find?",
+          options: ["Toxic people are rare — most respondents had none", "A large majority of respondents have a toxic person in their life", "Only workplaces produce toxic people", "People can't identify who's toxic to them"],
+          answer: 1,
+          explain: "73% of respondents said they have a toxic person in their life — which is why the say-no protocol exists. The \"controlled burn\" frame: clearing toxic weeds makes room for growth."
         }
       ]
     }

@@ -817,6 +817,31 @@ h2.pane-title { font-size: 1.25rem; margin-bottom: 4px; }
 }
 
 /* ============================================================
+   BOOK LINGO GLOSSARY (trainer)
+   ============================================================ */
+.lingo-search {
+  width: 100%; padding: 11px 14px; margin: 4px 0 6px;
+  font: inherit; font-size: .92rem; color: var(--ink);
+  background: var(--bg-2);
+  border: 1px solid var(--card-edge); border-radius: 12px;
+}
+.lingo-search:focus { outline: none; border-color: var(--violet); }
+.lingo-row {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 11px 12px; margin-bottom: 8px; cursor: pointer;
+  background: linear-gradient(160deg, var(--bg-3), var(--card));
+  border: 1px solid var(--card-edge); border-radius: 12px;
+}
+.lingo-row:active { border-color: var(--violet); }
+.lingo-emoji { font-size: 1.15rem; line-height: 1.3; }
+.lingo-body { min-width: 0; }
+.lingo-term { font-weight: 700; font-size: .92rem; }
+.lingo-def {
+  color: var(--ink-dim); font-size: .8rem; line-height: 1.45; margin-top: 2px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* ============================================================
    MATERIAL FALLBACKS — colour only, zero layout change.
    Last in the file so they beat every recipe/override above.
    ============================================================ */

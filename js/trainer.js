@@ -1,6 +1,7 @@
 /* ============================================================
-   trainer.js — quiz decks + flashcards built from book content
-   Decks come from CaptivateContent.decks and CuesContent.decks
+   trainer.js — quiz decks, flashcards, and the book-lingo glossary
+   Decks come from CaptivateContent, CuesContent, and LingoContent
+   Glossary terms: LingoContent.terms { id, term, emoji, book, def, example, related }
    Deck: { id, name, icon, desc, minLevel, questions: [{q, options[], answer, explain}] }
    Flashcard sets: { id, name, icon, cards: [{front, back}] }
    ============================================================ */
@@ -11,10 +12,10 @@ const Trainer = (() => {
   const XP_PERFECT_BONUS = 20;
 
   function allDecks() {
-    return CaptivateContent.decks.concat(CuesContent.decks);
+    return CaptivateContent.decks.concat(CuesContent.decks, LingoContent.decks);
   }
   function allFlashSets() {
-    return CaptivateContent.flashcards.concat(CuesContent.flashcards);
+    return CaptivateContent.flashcards.concat(CuesContent.flashcards, LingoContent.flashcards);
   }
 
   function render() {
@@ -23,6 +24,23 @@ const Trainer = (() => {
     pane.innerHTML = "";
     pane.appendChild(UI.el("h2", { class: "pane-title", text: "Training Grounds" }));
     pane.appendChild(UI.el("div", { class: "pane-sub", text: "Drill the science — microexpressions, cues, and conversation weapons." }));
+
+    // Glossary shortcut — plain-English decoder for every phrase the books coin
+    const gloss = UI.el("div", { class: "card quest-card" });
+    gloss.appendChild(UI.el("div", { class: "quest-head" }, [
+      UI.el("div", { class: "quest-ico", text: "📖" }),
+      UI.el("div", { class: "quest-body" }, [
+        UI.el("div", { class: "quest-name", text: "Book Lingo Glossary" }),
+        UI.el("div", { class: "quest-desc", text: "Every phrase the books use — sparker, thread theory, cue cluster, baseline — decoded in plain English with real examples." }),
+        UI.el("div", { class: "quest-meta" }, [
+          UI.el("span", { class: "chip", text: `${LingoContent.terms.length} terms` }),
+        ]),
+      ]),
+    ]));
+    gloss.appendChild(UI.el("div", { class: "quest-actions" }, [
+      UI.el("button", { class: "btn primary small", text: "Browse the glossary", onclick: renderGlossary }),
+    ]));
+    pane.appendChild(gloss);
 
     pane.appendChild(UI.el("div", { class: "section-label", text: "Quiz Decks" }));
     for (const deck of allDecks()) {
@@ -66,6 +84,83 @@ const Trainer = (() => {
       ]));
       pane.appendChild(card);
     }
+  }
+
+  // ---------- glossary ----------
+  function termById(id) {
+    return LingoContent.terms.find(t => t.id === id);
+  }
+
+  function renderGlossary(initialFilter) {
+    const pane = document.getElementById("pane-trainer");
+    pane.innerHTML = "";
+    pane.appendChild(UI.el("h2", { class: "pane-title", text: "📖 Book Lingo" }));
+    pane.appendChild(UI.el("div", { class: "pane-sub", text: "The books coin a lot of phrases. Here's every one in plain English — tap a term for the full story." }));
+
+    const search = UI.el("input", {
+      class: "lingo-search", type: "search", placeholder: "🔎 Search terms… (e.g. baseline, sparker)",
+      value: typeof initialFilter === "string" ? initialFilter : "",
+    });
+    search.addEventListener("input", () => drawList(search.value));
+    pane.appendChild(search);
+
+    const list = UI.el("div");
+    pane.appendChild(list);
+    pane.appendChild(UI.el("button", { class: "btn block", style: "margin-top:14px", text: "← Back to Training Grounds", onclick: render }));
+
+    function drawList(q) {
+      list.innerHTML = "";
+      const needle = (q || "").trim().toLowerCase();
+      const hits = LingoContent.terms.filter(t =>
+        !needle ||
+        t.term.toLowerCase().includes(needle) ||
+        t.def.toLowerCase().includes(needle)
+      );
+      if (!hits.length) {
+        list.appendChild(UI.el("div", { class: "card muted", text: "No terms match — try a shorter search." }));
+        return;
+      }
+      for (const book of ["Captivate", "Cues"]) {
+        const group = hits.filter(t => t.book === book)
+          .slice().sort((a, b) => a.term.localeCompare(b.term));
+        if (!group.length) continue;
+        list.appendChild(UI.el("div", { class: "section-label", text: `${book === "Captivate" ? "💬" : "👁️"} From ${book}` }));
+        for (const t of group) {
+          list.appendChild(UI.el("div", { class: "lingo-row", onclick: () => termModal(t) }, [
+            UI.el("span", { class: "lingo-emoji", text: t.emoji || "🔤" }),
+            UI.el("div", { class: "lingo-body" }, [
+              UI.el("div", { class: "lingo-term", text: t.term }),
+              UI.el("div", { class: "lingo-def", text: t.def }),
+            ]),
+          ]));
+        }
+      }
+    }
+    drawList(search.value);
+  }
+
+  function termModal(t) {
+    const wrap = UI.el("div", {}, [
+      UI.el("h3", { text: `${t.emoji || "🔤"} ${t.term}` }),
+      UI.el("div", { class: "quest-meta", style: "margin-top:6px" }, [
+        UI.el("span", { class: "chip", text: `from ${t.book}` }),
+      ]),
+      UI.el("p", { class: "muted", style: "line-height:1.6; margin-top:10px", text: t.def }),
+      UI.el("div", { class: "section-label", text: "In real life" }),
+      UI.el("div", { class: "say-chip", text: t.example }),
+    ]);
+    const related = (t.related || []).map(termById).filter(Boolean);
+    if (related.length) {
+      wrap.appendChild(UI.el("div", { class: "section-label", text: "Related lingo" }));
+      wrap.appendChild(UI.el("div", { class: "quest-meta" },
+        related.map(r => UI.el("span", {
+          class: "chip", style: "cursor:pointer", text: (r.emoji || "🔤") + " " + r.term,
+          onclick: () => { UI.closeModal(); termModal(r); },
+        }))
+      ));
+    }
+    wrap.appendChild(UI.el("button", { class: "btn primary block", text: "Got it", style: "margin-top:14px", onclick: UI.closeModal }));
+    UI.modal(wrap);
   }
 
   // ---------- quiz runner ----------
@@ -201,5 +296,5 @@ const Trainer = (() => {
     draw();
   }
 
-  return { render };
+  return { render, renderGlossary };
 })();
