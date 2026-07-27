@@ -10,7 +10,7 @@ const Home = (() => {
     pane.innerHTML = "";
 
     pane.appendChild(UI.el("h2", { class: "pane-title", text: greeting() }));
-    pane.appendChild(UI.el("div", { class: "pane-sub", text: "Small reps, every day. That's how charisma is built." }));
+    pane.appendChild(UI.el("div", { class: "pane-sub", text: "Small reps, every day." }));
 
     // Comeback card — after a 2+ day gap. Best streak is permanent; one tiny rep restarts.
     const gap = Store.daysSince(s.lastRepDay);
@@ -66,8 +66,9 @@ const Home = (() => {
     // Night Mode shortcut — the live-session mode
     pane.appendChild(UI.el("div", { class: "card daily-spark", style: "border-color:var(--gold)" }, [
       UI.el("div", { class: "spark-label", style: "color:var(--gold)", text: NightMode.active ? "🌙 Shift in progress" : "🌙 Night Mode" }),
-      UI.el("div", { class: "spark-text", text: NightMode.active ? "You're on the clock — jump back in." : "Working tonight? Get one small social mission at a time, on a timer." }),
-      UI.el("button", { class: "btn primary", style: "margin-top:10px", text: NightMode.active ? "Back to my shift" : "Start a shift", onclick: () => App.show("night") }),
+      UI.el("div", { class: "spark-text", text: NightMode.active ? "You're on the clock — jump back in." : "Three missions, picked for you, on a timer." }),
+      // One tap: starts the shift AND lands on the first mission. No setup screen.
+      UI.el("button", { class: "btn primary", style: "margin-top:10px", text: NightMode.active ? "Back to my shift" : "Start a shift", onclick: () => NightMode.startShift() }),
     ]));
 
     // Story Mode shortcut
@@ -106,17 +107,17 @@ const Home = (() => {
 
     // Stats
     pane.appendChild(UI.el("div", { class: "stat-grid" }, [
-      statTile(s.streak, "day streak"),
+      statTile(s.streak, "streak"),
       statTile(s.dailyQuests.done.length + "/" + (s.dailyQuests.ids.length || 3), "quests today"),
       statTile(Object.keys(s.questLog).length, "total quests"),
-      statTile(s.totalXp, "lifetime XP"),
+      statTile(s.totalXp, "XP"),
     ]));
 
     // Quest shortcut
     const remaining = s.dailyQuests.ids.length - s.dailyQuests.done.length;
     pane.appendChild(UI.el("div", { class: "card" }, [
       UI.el("h3", { text: remaining > 0 ? `⚔️ ${remaining} quest${remaining > 1 ? "s" : ""} waiting` : "🌟 All daily quests done!" }),
-      UI.el("div", { class: "muted", text: remaining > 0 ? "Get out there and run today's missions." : "Come back tomorrow for fresh missions — or hit the training grounds." }),
+      UI.el("div", { class: "muted", text: remaining > 0 ? "Out there, not in here." : "Fresh ones tomorrow — or go train." }),
       UI.el("button", {
         class: "btn primary", style: "margin-top:10px",
         text: remaining > 0 ? "Open quest board" : "Go train",
@@ -126,8 +127,8 @@ const Home = (() => {
 
     // Analyzer shortcut
     pane.appendChild(UI.el("div", { class: "card" }, [
-      UI.el("h3", { text: "🎙️ Ran a stream or recorded a convo?" }),
-      UI.el("div", { class: "muted", text: "Paste the transcript and get coached on your warmth, competence, and cues." }),
+      UI.el("h3", { text: "🎙️ Analyzer" }),
+      UI.el("div", { class: "muted", text: "Paste a transcript. Get scored and coached." }),
       UI.el("button", { class: "btn", style: "margin-top:10px", text: "Analyze a transcript", onclick: () => App.show("analyzer") }),
     ]));
   }

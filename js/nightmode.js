@@ -27,11 +27,11 @@ const NightMode = (() => {
       say: ["Those boots were a decision and it paid off.", "Espresso martini at midnight — respect, that's a power move."] },
     { id: "n-how-know", tier: 1, icon: "🤝", text: "Ask the person next to you how they know the group, then actually follow the thread they give you.",
       say: ["Wait, how do you two know each other?", "So who dragged who out tonight?"] },
-    { id: "n-lean-front", tier: 1, icon: "🧭", text: "For the next 5 minutes: front the person talking to you — toes, torso, face — and hold 60% eye contact. Say nothing extra; just be fully aimed.",
+    { id: "n-lean-front", tier: 1, icon: "🧭", text: "Next 5 minutes: point toes, torso and face at whoever's talking. Nothing else.",
       say: [] },
-    { id: "n-name-use", tier: 1, icon: "📛", text: "Use someone's name in a sentence within the next 2 minutes. If you don't know it yet, that IS the mission.",
+    { id: "n-name-use", tier: 1, icon: "📛", text: "Say someone's name out loud in the next 2 minutes. Don't know it? Go get it.",
       say: ["Wait — I don't think I actually caught your name. I'm Preston."] },
-    { id: "n-triple-nod", tier: 1, icon: "🫡", text: "Next time a girl at your table is telling a story, slow-triple-nod when she pauses and see if she keeps going.",
+    { id: "n-triple-nod", tier: 1, icon: "🫡", text: "Slow-triple-nod at the next pause in her story. Watch her keep going.",
       say: [] },
     { id: "n-hot-take", tier: 1, icon: "🔥", text: "Drop a playful hot take to the group and let them argue with it.",
       say: ["Hot take: the second drink is always better than the first.", "Hot take: every friend group has a designated photographer, and it's never fair."] },
@@ -41,7 +41,7 @@ const NightMode = (() => {
       say: ["Okay, best thing that happened to you today — go.", "What's the plan tonight — dance, talk, or cause problems?"] },
     { id: "n-bar-line", tier: 2, icon: "🍸", text: "On your next bar run, say one line to whoever is waiting next to you.",
       say: ["What are you ordering? I need a scouting report.", "This bar line is the real afterparty."] },
-    { id: "n-quiet-one", tier: 2, icon: "🫶", text: "Find the quietest girl at your table and make her the star for 2 minutes — one question, then follow-ups only about her answers.",
+    { id: "n-quiet-one", tier: 2, icon: "🫶", text: "Make the quietest girl at your table the star for 2 minutes.",
       say: ["You've been observing all of us like a documentary — what's the verdict so far?"] },
     { id: "n-intro-two", tier: 2, icon: "🔗", text: "Introduce two people at your table who haven't talked yet — give each a one-line highlight.",
       say: ["You two need to meet — she just got back from Miami, and he claims he's never lost at pool."] },
@@ -79,10 +79,12 @@ const NightMode = (() => {
 
   const TIER_XP = { 0: 8, 1: 15, 2: 25, 3: 40 };
   const LEVELS = {
-    1: { name: "Warm-up", tiers: [1] },
-    2: { name: "Steady", tiers: [1, 1, 2, 2] },
-    3: { name: "Bold", tiers: [1, 2, 2, 3] },
+    1: { name: "Nearby", tiers: [1] },
+    2: { name: "Mixed", tiers: [1, 1, 2, 2] },
+    3: { name: "Big swings", tiers: [1, 2, 2, 3] },
   };
+
+  const SET_SIZE = 3;   // missions auto-chosen per set — never asked for, never browsed
 
   let uiTimer = null;
   let wakeLock = null;
@@ -90,44 +92,127 @@ const NightMode = (() => {
   function ns() {
     const s = Store.state;
     if (!s.night) s.night = { active: false };
-    return s.night;
+    const n = s.night;
+    // Mid-shift saves written before the setlist existed still have to render.
+    if (n.active) {
+      if (!Array.isArray(n.setlist)) n.setlist = [];
+      if (typeof n.setIdx !== "number") n.setIdx = 0;
+      if (typeof n.setNo !== "number") n.setNo = 0;
+      if (typeof n.shiftIndex !== "number") n.shiftIndex = 0;
+      if (!Array.isArray(n.usedIds)) n.usedIds = [];
+      if (!Array.isArray(n.goals)) n.goals = [];
+      if (!n.cfg) n.cfg = { interval: nightCfg().interval, level: nightCfg().level };
+    }
+    return n;
+  }
+
+  // Remembered cadence — the start path has nothing to decide.
+  function nightCfg() {
+    const s = Store.state;
+    if (!s.settings.night) s.settings.night = { interval: 12, level: 2, day: null, shifts: 0 };
+    return s.settings.night;
+  }
+
+  /* ---------- the setlist: 3 missions chosen for you ----------
+     Seeded off the day + which shift of the day it is + which set within
+     that shift, so reopening the app never reshuffles tonight's picks. */
+  function tierOf(id) {
+    const p = PROMPTS.find(x => x.id === id);
+    return p ? p.tier : 9;
+  }
+
+  function buildSetlist() {
+    const n = ns();
+    const rand = Store.seededRandom(`${Store.todayKey()}|night${n.shiftIndex}|set${n.setNo}`);
+    const tiers = LEVELS[n.cfg.level] ? LEVELS[n.cfg.level].tiers : LEVELS[2].tiers;
+    const picks = [];
+    for (let i = 0; i < SET_SIZE; i++) {
+      const tier = tiers[Math.floor(rand() * tiers.length)];
+      let pool = PROMPTS.filter(p => p.tier === tier && !n.usedIds.includes(p.id) && !picks.includes(p.id));
+      if (!pool.length) pool = PROMPTS.filter(p => p.tier > 0 && !n.usedIds.includes(p.id) && !picks.includes(p.id));
+      if (!pool.length) { n.usedIds = []; pool = PROMPTS.filter(p => p.tier > 0 && !picks.includes(p.id)); }
+      if (!pool.length) break;
+      picks.push(pool[Math.floor(rand() * pool.length)].id);
+    }
+    picks.sort((a, b) => tierOf(a) - tierOf(b));   // easiest first: lowest activation energy leads
+    n.setlist = picks;
+    n.setIdx = 0;
+    Store.save();
+  }
+
+  function queueNextSet() {
+    const n = ns();
+    n.setNo += 1;
+    buildSetlist();
+    UI.toast(`${n.setlist.length} more queued`);
   }
 
   /* ---------- session lifecycle ---------- */
   function start(intervalMin, level) {
     const s = Store.state;
+    const cfg = nightCfg();
+    if (intervalMin) cfg.interval = intervalMin;
+    if (level) cfg.level = level;
+    const today = Store.todayKey();
+    if (cfg.day !== today) { cfg.day = today; cfg.shifts = 0; }
+    const shiftIndex = cfg.shifts;
+    cfg.shifts += 1;
+
     s.night = {
       active: true,
-      cfg: { interval: intervalMin, level },
+      cfg: { interval: cfg.interval, level: cfg.level },
+      shiftIndex,
       startedAt: Date.now(),
-      nextAt: Date.now() + 20 * 1000,   // first prompt after a 20s settle-in
+      nextAt: Date.now(),               // first mission is already here
       current: null,
       done: 0, passed: 0, combo: 0, bestCombo: 0, xp: 0,
       usedIds: [],
+      setlist: [], setIdx: 0, setNo: 0,
       goals: [],
     };
+    buildSetlist();
+    autoGoal();          // one shot, called for you — no modal
+    drawPrompt();        // mission on screen immediately, no settle-in
     Store.save();
     requestWake();
-    Native.rescheduleNotifications();   // prompt cadence goes out as notifications
+    Native.rescheduleNotifications();   // prompt cadence + the auto goal's pings
     render();
-    goalModal(true);   // offer to call your shots for the night
+  }
+
+  // Home's one-tap entry: start the shift AND land on it.
+  function startShift() {
+    if (!ns().active) start();
+    App.show("night");
   }
 
   function drawPrompt() {
     const n = ns();
-    const allowedTiers = LEVELS[n.cfg.level].tiers;
-    const tier = allowedTiers[Math.floor(Math.random() * allowedTiers.length)];
-    let pool = PROMPTS.filter(p => p.tier === tier && !n.usedIds.includes(p.id));
-    if (!pool.length) {
-      // tier exhausted → any unused schedulable prompt, else recycle
-      pool = PROMPTS.filter(p => p.tier > 0 && !n.usedIds.includes(p.id));
-      if (!pool.length) { n.usedIds = []; pool = PROMPTS.filter(p => p.tier > 0); }
-    }
-    const p = pool[Math.floor(Math.random() * pool.length)];
+    if (n.setIdx >= n.setlist.length) queueNextSet();
+    const id = n.setlist[n.setIdx];
+    const p = PROMPTS.find(x => x.id === id) || PROMPTS.find(x => x.tier > 0);
     n.current = p.id;
-    n.usedIds.push(p.id);
+    if (!n.usedIds.includes(p.id)) n.usedIds.push(p.id);
     Store.save();
     buzz();
+  }
+
+  // Wrong mission? One tap replaces it. No list, no modal.
+  function swap() {
+    const n = ns();
+    const cur = PROMPTS.find(x => x.id === n.current);
+    const baseTier = (cur && cur.tier > 0) ? cur.tier : tierOf(n.setlist[n.setIdx]);
+    const off = id => id === (cur && cur.id) || n.setlist.includes(id) || n.usedIds.includes(id);
+    let pool = PROMPTS.filter(p => p.tier === baseTier && !off(p.id));
+    if (!pool.length) pool = PROMPTS.filter(p => p.tier > 0 && !off(p.id));
+    if (!pool.length) pool = PROMPTS.filter(p => p.tier > 0 && p.id !== (cur && cur.id));
+    if (!pool.length) return;
+    const p = pool[Math.floor(Math.random() * pool.length)];
+    Native.haptic("tap");
+    n.current = p.id;
+    n.setlist[n.setIdx] = p.id;
+    if (!n.usedIds.includes(p.id)) n.usedIds.push(p.id);
+    Store.save();
+    render();
   }
 
   function tick() {
@@ -159,7 +244,7 @@ const NightMode = (() => {
     return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   }
 
-  function addGoal(text, count, deadlineAt) {
+  function addGoal(text, count, deadlineAt, quiet) {
     const n = ns();
     n.goals.push({
       id: "g" + Date.now() + Math.floor(Math.random() * 1000),
@@ -167,8 +252,25 @@ const NightMode = (() => {
       deadlineAt, completedAt: null, expired: false,
     });
     Store.save();
+    if (quiet) return;                  // start() reschedules + renders once, at the end
     Native.rescheduleNotifications();   // goal warning + deadline pings
     render();
+  }
+
+  // Exactly one goal, called for you, seeded so it's the same all night.
+  function autoGoal() {
+    const rand = Store.seededRandom(Store.todayKey() + "|goal");
+    const p = GOAL_PRESETS[Math.floor(rand() * GOAL_PRESETS.length)];
+    let deadlineAt;
+    if (p.mode === "abs") {
+      const [h, m] = p.time.split(":").map(Number);
+      const d = new Date(); d.setHours(h, m, 0, 0);
+      if (d.getTime() <= Date.now()) d.setDate(d.getDate() + 1);
+      deadlineAt = d.getTime();
+    } else {
+      deadlineAt = Date.now() + p.mins * 60 * 1000;
+    }
+    addGoal(p.text, p.count, deadlineAt, true);
   }
 
   function tickGoal(g) {
@@ -206,7 +308,7 @@ const NightMode = (() => {
     render();
   }
 
-  function goalModal(isShiftStart) {
+  function goalModal() {
     const n = ns();
     if (!n.active) return;
     let mode = "rel", mins = 30;
@@ -246,9 +348,9 @@ const NightMode = (() => {
       })));
 
     const wrap = UI.el("div", {}, [
-      UI.el("h3", { text: isShiftStart ? "🎯 Call your shots?" : "🎯 New night goal" }),
+      UI.el("h3", { text: "🎯 New night goal" }),
       UI.el("p", { class: "muted", style: "margin:6px 0 12px; line-height:1.5; font-size:.85rem",
-        text: "A target with a deadline — every +1 pays 10 XP instantly, hit the number before the clock for +50. Add as many as you want." }),
+        text: "+10 each. +50 if you hit the number in time." }),
       presetWrap,
       UI.el("div", { class: "field" }, [UI.el("label", { text: "What counts as one?" }), textInput]),
       UI.el("div", { class: "field" }, [UI.el("label", { text: "How many" }), countSel]),
@@ -270,7 +372,7 @@ const NightMode = (() => {
           UI.closeModal();
         },
       }),
-      UI.el("button", { class: "btn ghost block", style: "margin-top:8px", text: isShiftStart ? "Skip — just the timer tonight" : "Cancel", onclick: UI.closeModal }),
+      UI.el("button", { class: "btn ghost block", style: "margin-top:8px", text: "Cancel", onclick: UI.closeModal }),
     ]);
     UI.modal(wrap);
   }
@@ -279,13 +381,9 @@ const NightMode = (() => {
     const wrap = UI.el("div", { class: "card" }, [
       UI.el("div", { style: "display:flex; justify-content:space-between; align-items:center" }, [
         UI.el("h3", { text: "🎯 Tonight's goals", style: "margin:0" }),
-        UI.el("button", { class: "btn small ghost", text: "＋ Add", onclick: () => goalModal(false) }),
+        UI.el("button", { class: "btn small ghost", text: "＋ Add", onclick: () => goalModal() }),
       ]),
     ]);
-    if (!(n.goals || []).length) {
-      wrap.appendChild(UI.el("div", { class: "muted", style: "margin-top:8px", text: "No goals set — call a shot like \"talk to 3 new guys in the next 30 min\"." }));
-      return wrap;
-    }
     for (const g of n.goals) {
       const status = g.completedAt ? "✅" : g.expired ? "⌛" : "";
       const row = UI.el("div", { class: `goal-row ${g.completedAt ? "hit" : ""} ${g.expired ? "exp" : ""}` }, [
@@ -311,6 +409,10 @@ const NightMode = (() => {
     const p = PROMPTS.find(x => x.id === n.current);
     if (!p) { n.current = null; Store.save(); return; }
     Native.haptic("tap");
+
+    // Either way this slot is spent — move down the setlist.
+    n.setIdx += 1;
+    if (n.setIdx >= n.setlist.length) queueNextSet();     // never asks, just refills
 
     if (didIt) {
       n.done += 1;
@@ -423,50 +525,40 @@ const NightMode = (() => {
     else renderCountdown(pane, n);
   }
 
+  // One card, one button. Cadence lives behind a ghost link, collapsed.
   function renderSetup(pane) {
+    const cfg = nightCfg();
     pane.appendChild(UI.el("h2", { class: "pane-title", text: "🌙 Night Mode" }));
-    pane.appendChild(UI.el("div", { class: "pane-sub", text: "For when you're working. A timer feeds you one small social action at a time — with the exact line to open with — so you're never stuck waiting for someone to talk first." }));
+    pane.appendChild(UI.el("div", { class: "pane-sub", text: "Three missions, one at a time, with the line to open with." }));
 
-    let interval = 12, level = 2;
     const intervalRow = UI.el("div", { class: "seg-row" },
       [7, 12, 20].map(v => UI.el("button", {
-        class: `seg ${v === interval ? "on" : ""}`, text: `${v} min`,
-        onclick: (e) => { interval = v; intervalRow.querySelectorAll(".seg").forEach(b => b.classList.remove("on")); e.target.classList.add("on"); },
+        class: `seg ${v === cfg.interval ? "on" : ""}`, text: `${v} min`,
+        onclick: (e) => { cfg.interval = v; Store.save(); intervalRow.querySelectorAll(".seg").forEach(b => b.classList.remove("on")); e.target.classList.add("on"); },
       }))
     );
     const levelRow = UI.el("div", { class: "seg-row" },
       [1, 2, 3].map(v => UI.el("button", {
-        class: `seg ${v === level ? "on" : ""}`, text: LEVELS[v].name,
-        onclick: (e) => { level = v; levelRow.querySelectorAll(".seg").forEach(b => b.classList.remove("on")); e.target.classList.add("on"); },
+        class: `seg ${v === cfg.level ? "on" : ""}`, text: LEVELS[v].name,
+        onclick: (e) => { cfg.level = v; Store.save(); levelRow.querySelectorAll(".seg").forEach(b => b.classList.remove("on")); e.target.classList.add("on"); },
       }))
     );
+    const tweaks = UI.el("div", { class: "night-tweaks hidden" }, [intervalRow, levelRow]);
+    const tweakBtn = UI.el("button", {
+      class: "btn ghost small block", style: "margin-top:8px", text: "⚙ Cadence",
+      onclick: () => tweaks.classList.toggle("hidden"),
+    });
 
     pane.appendChild(UI.el("div", { class: "card" }, [
-      UI.el("div", { class: "field" }, [UI.el("label", { text: "Prompt every…" }), intervalRow]),
-      UI.el("div", { class: "field" }, [
-        UI.el("label", { text: "Intensity" }),
-        levelRow,
-        UI.el("div", { class: "hint", text: "Warm-up: only people already around you. Steady: adds fresh approaches. Bold: adds toasts, table stories, bridging groups." }),
-      ]),
-      UI.el("button", { class: "btn primary block", text: "▶ Start my shift", onclick: () => start(interval, level) }),
+      UI.el("button", { class: "btn primary block", text: "▶ Start my shift", onclick: () => start() }),
+      tweakBtn,
+      tweaks,
     ]));
-
-    pane.appendChild(UI.el("div", { class: "card" }, [
-      UI.el("h3", { text: "How it works" }),
-      UI.el("div", { class: "muted", style: "line-height:1.6", text:
-        "Every interval you get one mission sized to fit between hosting duties — walking someone in, drink runs, sitting at the table. Do it, tap ✔, and your combo builds (+5 XP per chain). Not the right moment? Pass freely — combo resets but a smaller one comes sooner. Frozen? The 🛟 button shrinks the mission to something you can do in 5 seconds." }),
-    ]));
-
-    // Keep tab switching from killing the page state — session persists anyway
-    const s = Store.state;
-    if (s.badges.includes("night-first")) {
-      pane.appendChild(UI.el("div", { class: "muted", style: "text-align:center; font-size:.78rem", text: "Session state survives closing the app — your shift keeps running." }));
-    }
   }
 
   function renderCountdown(pane, n) {
     pane.appendChild(UI.el("h2", { class: "pane-title", text: "🌙 On shift" }));
-    pane.appendChild(UI.el("div", { class: "pane-sub", text: `${LEVELS[n.cfg.level].name} · every ${n.cfg.interval} min` }));
+    pane.appendChild(UI.el("div", { class: "pane-sub", text: liveLine(n) }));
 
     const clock = UI.el("div", { class: "night-clock", text: fmt(n.nextAt - Date.now()) });
     const bar = UI.el("div", { class: "meter", style: "margin-top:14px" }, [
@@ -475,12 +567,12 @@ const NightMode = (() => {
     pane.appendChild(UI.el("div", { class: "card night-wait" }, [
       UI.el("div", { class: "muted", text: "Next mission in" }),
       clock, bar,
-      UI.el("div", { class: "muted", style: "margin-top:12px; font-size:.8rem", text: "Live your night — this will buzz when it's time. Or jump the gun:" }),
-      UI.el("button", { class: "btn small", style: "margin-top:8px", text: "⚡ Give me one now", onclick: () => { ns().nextAt = Date.now(); Store.save(); render(); } }),
+      setDots(n),
+      UI.el("div", { class: "muted", style: "margin-top:12px; font-size:.8rem", text: "It'll buzz." }),
+      UI.el("button", { class: "btn small", style: "margin-top:8px", text: "⚡ Now", onclick: () => { ns().nextAt = Date.now(); Store.save(); render(); } }),
     ]));
 
     pane.appendChild(goalsCard(n));
-    pane.appendChild(statsCard(n));
     pane.appendChild(UI.el("button", { class: "btn danger block", text: "End shift", onclick: endSession }));
 
     const total = n.cfg.interval * 60 * 1000;
@@ -493,10 +585,12 @@ const NightMode = (() => {
     }, 500);
   }
 
+  // The mission screen shows the mission. Nothing else competes with it.
   function renderPrompt(pane, n) {
     const p = PROMPTS.find(x => x.id === n.current);
     pane.appendChild(UI.el("h2", { class: "pane-title", text: "🎯 Your mission" }));
-    pane.appendChild(UI.el("div", { class: "pane-sub", text: p.tier === 0 ? "Tiny version — five seconds, that's all." : `Tier ${p.tier} · +${TIER_XP[p.tier]} XP${n.combo > 0 ? ` · combo ×${n.combo + 1} bonus +${Math.min(25, n.combo * 5)}` : ""}` }));
+    pane.appendChild(UI.el("div", { class: "pane-sub", text: p.tier === 0 ? "Five seconds, that's all." : `+${TIER_XP[p.tier]} XP · ${liveLine(n)}` }));
+    pane.appendChild(setDots(n));
 
     const card = UI.el("div", { class: "card night-prompt" }, [
       UI.el("div", { class: "np-icon", text: p.icon }),
@@ -512,23 +606,28 @@ const NightMode = (() => {
       UI.el("button", { class: "btn primary", style: "flex:2", text: "✔ Did it", onclick: () => resolve(true) }),
       UI.el("button", { class: "btn", style: "flex:1", text: "Pass", onclick: () => resolve(false) }),
     ]));
-    if (p.tier > 0) {
-      pane.appendChild(UI.el("button", { class: "btn ghost block", style: "margin-top:8px", text: "🛟 I'm frozen — make it smaller", onclick: panic }));
+    pane.appendChild(UI.el("div", { style: "display:flex; gap:8px; margin-top:8px" }, [
+      UI.el("button", { class: "btn ghost", style: "flex:1", text: "⇄ Swap", onclick: swap }),
+      p.tier > 0
+        ? UI.el("button", { class: "btn ghost", style: "flex:1", text: "🛟 Smaller", onclick: panic })
+        : UI.el("button", { class: "btn danger", style: "flex:1", text: "End shift", onclick: endSession }),
+    ]));
+  }
+
+  // Position in tonight's set, in 3 glyphs and 0 words.
+  function setDots(n) {
+    const wrap = UI.el("div", { class: "goal-dots set-dots" });
+    for (let i = 0; i < n.setlist.length; i++) {
+      const state = i < n.setIdx ? "lit" : (i === n.setIdx ? "now" : "");
+      wrap.appendChild(UI.el("span", { class: `gdot ${state}` }));
     }
-
-    pane.appendChild(goalsCard(n));
-    pane.appendChild(statsCard(n));
-    pane.appendChild(UI.el("button", { class: "btn danger block", text: "End shift", onclick: endSession }));
+    return wrap;
   }
 
-  function statsCard(n) {
-    return UI.el("div", { class: "stat-grid", style: "margin:14px 0" }, [
-      UI.el("div", { class: "stat-tile" }, [UI.el("div", { class: "st-num", text: String(n.done) }), UI.el("div", { class: "st-label", text: "done" })]),
-      UI.el("div", { class: "stat-tile" }, [UI.el("div", { class: "st-num", text: "×" + n.combo }), UI.el("div", { class: "st-label", text: "combo" })]),
-      UI.el("div", { class: "stat-tile" }, [UI.el("div", { class: "st-num", text: String(n.xp) }), UI.el("div", { class: "st-label", text: "night XP" })]),
-      UI.el("div", { class: "stat-tile" }, [UI.el("div", { class: "st-num", text: String(n.passed) }), UI.el("div", { class: "st-label", text: "passes" })]),
-    ]);
+  // The only live number worth carrying: what you've banked so far.
+  function liveLine(n) {
+    return `${n.done} done${n.combo > 1 ? ` · ×${n.combo}` : ""}`;
   }
 
-  return { render, get active() { return ns().active; } };
+  return { render, startShift, start, get active() { return ns().active; } };
 })();

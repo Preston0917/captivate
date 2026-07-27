@@ -222,7 +222,42 @@ Night Mode has no tab and is only reachable via a Home card — a hidden mode fo
 
 ---
 
-## 4. Explicitly out of scope / do not do
+## 4. As built (P1 + P2 shipped 2026-07-27)
+
+P1 and P2 are implemented. P3 was left alone — nothing in §3 P3 is marked low-risk/cheap.
+
+**Measured, fresh save, headless Chromium 390×844** (counters live in `tests/e2e.mjs`; a "word" is any whitespace-run containing a letter or digit, so `·` and bare emoji don't inflate counts):
+
+| Screen | Tappables before → after | Words before → after | Height |
+|---|---|---|---|
+| Night setup | 7 → **2** | 137 → **18** | 844 → 171px |
+| Night goal modal at start | 16 → **gone** | 95 → **0** | — |
+| Night mission | 5 → **4** | 84 → **24** (11 excl. mission + openers) | 966 → 335px |
+| Night countdown | 3 → **4** | 65 → **28** | 525px |
+| Home | 4 → **4** | 143 → **109** | 1015px |
+| Quest Board | 21 → **21** | 325 → **252** | 2204 → 1848px |
+| Story hub | 3 → 3 | 182 → **151** | 909px |
+| Settings | 5 → 5 | 124 → **84** | — |
+
+Path to a live mission: **3 taps + 1 modal + a 20s wait → 1 tap, 0 modals, 0 wait.**
+
+**Deviations from §3, and why**
+
+1. **`End shift` is not on the mission screen.** P1.6's prose keeps it; the P1 acceptance cap of ≤4 tappables does not fit `Did it / Pass / ⇄ Swap / 🛟 Smaller` *plus* an exit. The cap won (it matches P1.6's own "mission card + Did it/Pass + 2 ghost buttons"). Ending a shift lives on the countdown screen, which is one free `Pass` away. On a tier-0 rescue — where 🛟 is meaningless — the 4th slot becomes `End shift`.
+2. **No per-row `Change` link on the auto goal** (P1.3). It would have made the countdown 5 tappables against a ≤4 cap. `＋ Add` still opens the same `goalModal()`, so the goal set is still editable mid-shift.
+3. **`Pass` advances the setlist** (unspecified in §3). A passed mission is spent, not re-served — passing stays free, it just moves you down the set. Same for a 🛟 rescue: it consumes the slot it replaced.
+4. **Quest Board 180-word / 1500px targets not met** (252w / 1848px, from 325w / 2204px). The remaining bulk is the 5 side-quest cards + custom-quest author, which only P3.2 removes. Same story for Home: 109 words hits the ≤110 target on a fresh save, but the conditional "one rep away" card pushes it to ~127 when it appears — P3.1 territory.
+5. **The 20-word UI-string cap is scoped to UI copy.** `js/data/` (content), `js/demos.js` (demo captions) and `analyzer.js`'s `systemPrompt()` (model instructions, fenced with `lint-copy-ignore-*`) are exempt. Every other string literal in `js/*.js` is ≤20 words, enforced by e2e step 13.
+6. **Extra copy trims beyond the §3 list**, all same-flavour: `n-triple-nod` (21w → 12w, it was over the cap), Home sub / Night card / quest-shortcut / analyzer-card lines, side-quest empty state, custom-quest blurb, and two Home stat labels (`day streak` → `streak`, `lifetime XP` → `XP`) to land the ≤110 Home budget.
+
+**Mechanics**
+- Seed: `Store.seededRandom(todayKey + "|night<shiftIndex>|set<setNo>")`. `shiftIndex` counts shifts started today (`settings.night.day/shifts`), `setNo` counts refills within the shift — so a reload never rerolls, a second shift the same night gets a fresh set, and each refill differs.
+- Save schema (additive, safe for old saves): `settings.night = { interval, level, day, shifts }` gets the same nested-merge treatment as `settings.notifs`; `night.setlist / setIdx / setNo / shiftIndex` are backfilled in `ns()` so a mid-shift save from the old shape renders and resolves without throwing (e2e step 4i).
+- Notifications unchanged in shape: session pings still schedule on `start()` (from `nextAt`, so the first push is one interval out, not instant) and cancel on `endSession()`; the auto goal is added *before* the reschedule, so its warning/deadline pair goes out with the rest.
+
+---
+
+## 5. Explicitly out of scope / do not do
 
 - No streaks-as-pressure, no loss framing, no new notification types, no "you missed" copy. Passing stays free (`resolve(false)` behaviour unchanged).
 - No restyle: Liquid Glass tokens, blur, neon borders, gold primary all stay. Every change above is density, defaults, or disclosure.

@@ -52,6 +52,9 @@ const Store = (() => {
       model: "claude-opus-5",
       // Native reminders (ignored on web, where nothing can schedule them)
       notifs: { enabled: false, questHour: "10:00", streakHour: "20:30" },
+      // Night Mode remembers its cadence so starting a shift costs zero choices.
+      // day/shifts count the shifts started today — the setlist seed uses it.
+      night: { interval: 12, level: 2, day: null, shifts: 0 },
     },
   });
 
@@ -67,6 +70,7 @@ const Store = (() => {
       // Object.assign is shallow: re-merge nested settings so new keys get defaults
       loaded.settings = Object.assign({}, defSettings, loaded.settings || {});
       loaded.settings.notifs = Object.assign({}, defSettings.notifs, loaded.settings.notifs || {});
+      loaded.settings.night = Object.assign({}, defSettings.night, loaded.settings.night || {});
       // Migration for saves from before the rep-streak rework
       if (loaded.bestStreak < loaded.streak) loaded.bestStreak = loaded.streak;
       if (!loaded.lastRepDay && loaded.lastActiveDay) loaded.lastRepDay = loaded.lastActiveDay;

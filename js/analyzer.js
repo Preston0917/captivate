@@ -91,6 +91,8 @@ const Analyzer = (() => {
     }
   };
 
+  // lint-copy-ignore-start — model instructions, not UI copy: the 20-word
+  // UI-string cap in tests/e2e.mjs does not apply to what we send to Claude.
   function systemPrompt() {
     return [
       "You are a social-skills coach whose entire methodology comes from Vanessa Van Edwards' books 'Captivate' and 'Cues'.",
@@ -104,6 +106,7 @@ const Analyzer = (() => {
       "Be an encouraging but honest coach: name what the user did well with the same rigor as what to fix. Coaching must cite the named technique and reference concrete moments from this transcript."
     ].join("\n");
   }
+  // lint-copy-ignore-end
 
   async function analyze(transcript, userName) {
     const { model } = Store.state.settings;
@@ -151,7 +154,7 @@ const Analyzer = (() => {
     const s = Store.state;
     pane.innerHTML = "";
     pane.appendChild(UI.el("h2", { class: "pane-title", text: "Conversation Analyzer" }));
-    pane.appendChild(UI.el("div", { class: "pane-sub", text: "Paste a transcript from a recorded conversation. Get scored on the Cues charisma scale and coached with Captivate techniques. +40 XP per analysis." }));
+    pane.appendChild(UI.el("div", { class: "pane-sub", text: "Paste a transcript. Get scored and coached." }));
 
     const needKeyCard = UI.el("div", { class: "card" }, [
       UI.el("h3", { text: "🔑 API key needed" }),

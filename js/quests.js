@@ -87,6 +87,13 @@ const Quests = (() => {
     }
   }
 
+  // First sentence of a description — enough to decide, never a paragraph.
+  function firstSentence(text) {
+    const t = String(text || "").trim();
+    const m = t.match(/^[\s\S]*?[.!?](?=\s|$)/);
+    return m ? m[0].trim() : t;
+  }
+
   function questCard(q, { isDaily = false } = {}) {
     const s = Store.state;
     const doneToday = isDaily
@@ -98,7 +105,8 @@ const Quests = (() => {
       UI.el("div", { class: "quest-ico", text: q.icon || "⚔️" }),
       UI.el("div", { class: "quest-body" }, [
         UI.el("div", { class: "quest-name", text: q.name }),
-        UI.el("div", { class: "quest-desc", text: q.desc }),
+        // Card carries the first sentence only — the full desc is in the how-to modal.
+        UI.el("div", { class: "quest-desc", text: firstSentence(q.desc) }),
         UI.el("div", { class: "quest-meta" }, [
           UI.el("span", { class: "chip xp", text: `+${q.xp} XP` }),
           q.axis ? UI.el("span", { class: `chip ${q.axis}`, text: q.axis === "warm" ? "Warmth" : "Competence" }) : null,
@@ -147,7 +155,7 @@ const Quests = (() => {
       card.appendChild(UI.el("div", { class: "quest-actions" }, [
         UI.el("button", { class: "btn primary small", text: "I did it ✔", onclick: () => { Native.haptic("tap"); completeQuest(q, isDaily); } }),
         (q.how || q.tip) ? UI.el("button", {
-          class: "btn ghost small", text: "How do I do this?",
+          class: "btn ghost small", text: "How",
           onclick: () => howToModal(q),
         }) : null,
       ]));
@@ -155,7 +163,7 @@ const Quests = (() => {
     // Tally quests get a how-to button too (below the counter)
     if (q.type === "tally" && !doneToday && (q.how || q.tip)) {
       card.appendChild(UI.el("div", { class: "quest-actions", style: "margin-top:8px" }, [
-        UI.el("button", { class: "btn ghost small", text: "What am I looking for?", onclick: () => howToModal(q) }),
+        UI.el("button", { class: "btn ghost small", text: "What", onclick: () => howToModal(q) }),
       ]));
     }
     return card;
@@ -222,7 +230,7 @@ const Quests = (() => {
     const pane = document.getElementById("pane-quests");
     pane.innerHTML = "";
     pane.appendChild(UI.el("h2", { class: "pane-title", text: "Quest Board" }));
-    pane.appendChild(UI.el("div", { class: "pane-sub", text: "Real-world practice missions from Captivate & Cues. Complete them out in the wild, then log them here." }));
+    pane.appendChild(UI.el("div", { class: "pane-sub", text: "Do them out there. Log them here." }));
 
     // Weekly boss
     if (s.weeklyBoss.id) {
@@ -252,13 +260,13 @@ const Quests = (() => {
       listWrap.appendChild(questCard(q));
       shown++;
     }
-    if (!shown) listWrap.appendChild(UI.el("div", { class: "card muted", text: "You've seen it all for now — level up to unlock more." }));
+    if (!shown) listWrap.appendChild(UI.el("div", { class: "card muted", text: "All caught up — level up for more." }));
     pane.appendChild(listWrap);
 
     // Custom quest author
     pane.appendChild(UI.el("div", { class: "section-label", text: "Create your own" }));
     pane.appendChild(UI.el("div", { class: "card" }, [
-      UI.el("div", { class: "muted", text: "Design a personal challenge — e.g. a specific situation you want to practice." }),
+      UI.el("div", { class: "muted", text: "Set your own challenge." }),
       UI.el("button", {
         class: "btn small", text: "＋ New custom quest", style: "margin-top:10px",
         onclick: customQuestModal,

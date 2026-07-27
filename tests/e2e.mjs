@@ -214,6 +214,39 @@ async function assertChromeContrast(page, where) {
   }
 }
 
+/* ---------- generic density counters ----------
+   Deliberately NOT string matches: these keep guarding the ADHD budgets in
+   docs/adhd-ux-review.md after any future copy edit. A "word" is any
+   whitespace-run containing a letter or digit, so "·", "—" and bare emoji
+   don't inflate the count; a "tappable" is any visible interactive element
+   inside the pane (collapsed disclosure content is not visible, so it
+   correctly doesn't count until it's opened). */
+async function countWords(page, sel, exclude = []) {
+  return page.evaluate(({ sel, exclude }) => {
+    const root = document.querySelector(sel);
+    if (!root) return -1;
+    const clone = root.cloneNode(true);
+    for (const ex of exclude) clone.querySelectorAll(ex).forEach(n => n.remove());
+    document.body.appendChild(clone);
+    const text = clone.innerText || "";
+    clone.remove();
+    return text.trim().split(/\s+/).filter(w => /[A-Za-z0-9]/.test(w)).length;
+  }, { sel, exclude });
+}
+
+async function countTappables(page, sel) {
+  return page.evaluate(sel => {
+    const root = document.querySelector(sel);
+    if (!root) return -1;
+    const nodes = root.querySelectorAll('button, a[href], input, select, textarea, [role="button"]');
+    return [...nodes].filter(n => n.offsetParent !== null || getComputedStyle(n).position === "fixed").length;
+  }, sel);
+}
+
+async function nightState(page) {
+  return page.evaluate(() => JSON.parse(JSON.stringify(Store.state.night)));
+}
+
 async function closeAnyModal(page) {
   for (let i = 0; i < 4; i++) {
     const open = await page.locator("#modal-layer:not(.hidden)").count();
@@ -324,40 +357,212 @@ await step("3. completes a daily quest → XP toast + HUD XP + streak", async ()
   assert(streakAfter.includes("1"), `streak did not increment: "${streakBefore}" → "${streakAfter}"`);
 });
 
-/* --- 4. Night Mode session --- */
-await step("4. Night Mode: start shift → add goal → +1 → end shift", async () => {
-  await openTab(page, "home");
-  await page.locator("#pane-home .card", { hasText: "Night Mode" }).locator("button").click();
+/* --- 4. Night Mode auto-pilot (docs/adhd-ux-review.md P1) --- */
+await step("4a. Night setup: 1 card, ≤2 tappables, ≤25 words, cadence collapsed", async () => {
+  await page.evaluate(() => App.show("night"));
   await page.waitForFunction(() => document.getElementById("pane-night").classList.contains("active"));
-  await page.locator("#pane-night button", { hasText: "Start my shift" }).click();
+  assert(!(await page.locator("#pane-night .night-clock").count()), "a shift is already running — setup not measurable");
 
-  // the shift-start goal modal opens on its own
-  await page.waitForSelector("#modal-layer:not(.hidden)", { timeout: 4000 });
-  await page.locator('#modal-card input[type="text"]').fill("Talk to someone new");
-  await page.locator("#modal-card button", { hasText: "Add goal" }).click();
-  await waitModalClosed(page);
+  const taps = await countTappables(page, "#pane-night");
+  const words = await countWords(page, "#pane-night");
+  assert(taps <= 2, `night setup shows ${taps} tappables (cap is 2: Start my shift, ⚙ Cadence)`);
+  assert(words <= 25, `night setup carries ${words} words (cap is 25)`);
+  assert(await page.locator("#pane-night .card").count() === 1, "night setup is no longer a single card");
+  await shot(page, "04a-night-setup");
 
-  assert(await page.locator("#pane-night .night-clock").count() === 1, "shift countdown did not render");
-  assert(await page.locator("#pane-night .goal-row").count() === 1, "night goal did not render");
-  await shot(page, "04-night-session-active");
+  // the cadence controls survive — one tap off the start path, never blocking
+  await page.locator("#pane-night button", { hasText: "Cadence" }).click();
+  await page.waitForTimeout(150);
+  assert(await countTappables(page, "#pane-night") > 2, "⚙ Cadence expanded nothing — config was deleted, not demoted");
+  await page.locator("#pane-night button", { hasText: "Cadence" }).click();
+  await page.waitForTimeout(150);
+  assertEq(await countTappables(page, "#pane-night"), taps, "⚙ Cadence did not collapse again");
+});
 
+await step("4b. one tap from Home → active shift, first mission on screen, 0 modals", async () => {
+  await openTab(page, "home");
+  const before = await page.evaluate(() => !!(Store.state.night && Store.state.night.active));
+  assert(!before, "a shift was already active before the 1-tap test");
+
+  // THE tap — nothing else may be required to reach a mission
+  await page.locator("#pane-home .card", { hasText: "Night Mode" }).locator("button").click();
+  await page.waitForFunction(() => document.getElementById("pane-night").classList.contains("active"), null, { timeout: 3000 });
+
+  assertEq(await page.locator("#modal-layer:not(.hidden)").count(), 0, "starting a shift opened a modal");
+  assertEq(await page.locator("#pane-night .night-prompt").count(), 1,
+    "no mission on screen after the single tap (settle-in timer or setup screen is back)");
+  assertEq(await page.locator("#pane-night .night-clock").count(), 0, "landed on the countdown instead of a mission");
+
+  const n = await nightState(page);
+  assert(n.active, "the shift is not active");
+  assertEq(n.setlist.length, 3, "setlist is not 3 missions");
+  assertEq(new Set(n.setlist).size, 3, "setlist repeats a mission");
+  assertEq(n.setIdx, 0, "setlist did not start at the first mission");
+  assert(n.setlist.includes(n.current), "the mission on screen is not the first of the setlist");
+  assertEq(n.goals.length, 1, `expected exactly 1 auto-added goal, got ${n.goals.length}`);
+  assert(n.goals[0].target >= 1 && n.goals[0].deadlineAt > Date.now(), "the auto goal has no live target/deadline");
+  assertEq(await page.locator("#pane-night .set-dots .gdot").count(), 3, "the 3-dot setlist strip is missing");
+  await shot(page, "04b-night-mission");
+});
+
+await step("4c. mission screen: ≤4 tappables, ≤45 words (excl. mission + openers)", async () => {
+  const taps = await countTappables(page, "#pane-night");
+  const words = await countWords(page, "#pane-night", [".np-text", ".say-chip"]);
+  assert(taps <= 4, `mission screen shows ${taps} tappables (cap is 4)`);
+  assert(words <= 45, `mission screen carries ${words} words excluding the mission (cap is 45)`);
+  assertEq(await page.locator("#pane-night .stat-grid").count(), 0, "the 4-tile stat grid is back on the mission screen");
+  assertEq(await page.locator("#pane-night .goal-row").count(), 0, "the goals card is back on the mission screen");
+});
+
+await step("4d. setlist is seeded — identical across a reload", async () => {
+  const before = await nightState(page);
+  const missionBefore = await page.locator("#pane-night .np-text").innerText();
+
+  await page.reload({ waitUntil: "load" });
+  await page.waitForSelector("#pane-home.active .card", { timeout: 8000 });
+  await page.evaluate(() => App.show("night"));
+  await page.waitForFunction(() => document.getElementById("pane-night").classList.contains("active"));
+
+  const after = await nightState(page);
+  assertEq(after.setlist.join(","), before.setlist.join(","), "the setlist reshuffled across a reload");
+  assertEq(after.setIdx, before.setIdx, "setlist position moved across a reload");
+  assertEq(after.goals.length, 1, "the auto goal did not survive the reload");
+  assertEq(await page.locator("#pane-night .np-text").innerText(), missionBefore, "a different mission rendered after the reload");
+
+  // the seed itself is deterministic, not just persisted
+  const seedStable = await page.evaluate(() => {
+    const key = Store.todayKey() + "|night0|set0";
+    const a = Store.seededRandom(key), b = Store.seededRandom(key);
+    return [0, 1, 2, 3, 4].every(() => a() === b());
+  });
+  assert(seedStable, "Store.seededRandom is not deterministic for the night seed");
+});
+
+await step("4e. Swap replaces the mission in place — no list, no modal", async () => {
+  const before = await nightState(page);
+  const textBefore = await page.locator("#pane-night .np-text").innerText();
+
+  await page.locator("#pane-night button", { hasText: "Swap" }).click();
+  await page.waitForTimeout(200);
+
+  assertEq(await page.locator("#modal-layer:not(.hidden)").count(), 0, "Swap opened a modal");
+  assertEq(await page.locator("#pane-night .night-prompt").count(), 1, "Swap left more than one mission card / a browse list");
+  const after = await nightState(page);
+  assert(after.current !== before.current, "Swap did not change the mission");
+  assert((await page.locator("#pane-night .np-text").innerText()) !== textBefore, "the mission text did not change");
+  assertEq(after.setlist.length, 3, "Swap resized the setlist");
+  assertEq(after.setlist[after.setIdx], after.current, "Swap did not write the new mission into the setlist");
+  assertEq(after.setIdx, before.setIdx, "Swap advanced the setlist instead of replacing in place");
+  assert(await countTappables(page, "#pane-night") <= 4, "Swap added tappables to the mission screen");
+  await shot(page, "04e-night-after-swap");
+});
+
+await step("4f. ✔ Did it pays XP; countdown ≤4 tappables, ≤35 words", async () => {
+  const xpBefore = await hudXp(page);
+  await page.locator("#pane-night button", { hasText: "Did it" }).click();
+  const toast = page.locator(".toast").first();
+  await toast.waitFor({ state: "attached", timeout: 3000 });
+  await closeAnyModal(page);
+  assert((await hudXp(page)) !== xpBefore, "completing a mission paid no XP");
+
+  const n = await nightState(page);
+  assertEq(n.done, 1, "the completed mission was not banked");
+  assertEq(n.setIdx, 1, "the setlist did not advance");
+
+  assertEq(await page.locator("#pane-night .night-clock").count(), 1, "no countdown after completing a mission");
+  const taps = await countTappables(page, "#pane-night");
+  const words = await countWords(page, "#pane-night");
+  assert(taps <= 4, `countdown shows ${taps} tappables (cap is 4)`);
+  assert(words <= 35, `countdown carries ${words} words (cap is 35)`);
+  assertEq(await page.locator("#pane-night .stat-grid").count(), 0, "the 4-tile stat grid is back on the countdown");
+  assertEq(await page.locator("#pane-night .goal-row").count(), 1, "the auto goal is not on the countdown");
+  await shot(page, "04f-night-countdown");
+
+  // the auto goal still pays on +1
   await page.locator("#pane-night .goal-plus").click();
   await page.waitForTimeout(250);
-  assertEq(await page.locator("#pane-night .gdot.lit").count(), 1, "goal +1 did not light a dot");
+  await closeAnyModal(page);
+  assert(await page.locator("#pane-night .goal-row .gdot.lit").count() >= 1, "goal +1 did not light a dot");
+});
 
+await step("4g. finishing the set auto-queues 3 more — no prompt, no modal", async () => {
+  for (let i = 0; i < 2; i++) {                       // missions 2 and 3 of the set
+    await page.locator("#pane-night button", { hasText: "Now" }).click();
+    await page.waitForSelector("#pane-night .night-prompt", { timeout: 3000 });
+    await page.locator("#pane-night button", { hasText: "Did it" }).click();
+    await page.waitForTimeout(250);
+    await closeAnyModal(page);
+  }
+  const n = await nightState(page);
+  assertEq(await page.locator("#modal-layer:not(.hidden)").count(), 0, "refilling the setlist opened a modal");
+  assertEq(n.setlist.length, 3, "the refilled setlist is not 3 missions");
+  assertEq(n.setIdx, 0, "the refilled setlist did not reset its position");
+  assert(n.setNo >= 1, "the setlist was not regenerated after the 3rd mission");
+  assertEq(n.done, 3, "not all three missions were banked");
+});
+
+await step("4h. end shift → summary, rep logged, pane back to setup", async () => {
   await page.locator("#pane-night .btn.danger", { hasText: "End shift" }).click();
   await page.waitForSelector("#modal-layer:not(.hidden)", { timeout: 4000 });
   const summary = await page.locator("#modal-card").innerText();
   assert(summary.includes("Shift complete"), `expected the shift summary, got: ${summary.slice(0, 80)}`);
+  assert(/\+\d+ XP tonight/.test(summary), `the summary lost its XP total: ${summary.slice(0, 120)}`);
+  await shot(page, "04h-night-summary");
   await closeAnyModal(page);
+
+  const repDay = await page.evaluate(() => ({ rep: Store.state.lastRepDay, today: Store.todayKey() }));
+  assertEq(repDay.rep, repDay.today, "the shift did not log a real-world rep");
+  assert(!(await page.evaluate(() => Store.state.night.active)), "the shift is still active after ending it");
   assert(await page.locator("#pane-night button", { hasText: "Start my shift" }).count() === 1,
     "night pane did not return to setup after ending the shift");
+});
+
+await step("4i. a mid-shift save from the OLD schema still renders", async () => {
+  // pre-setlist shape: no setlist / setIdx / setNo / shiftIndex
+  const legacy = (current) => ({
+    active: true,
+    cfg: { interval: 12, level: 2 },
+    startedAt: Date.now() - 600000,
+    nextAt: Date.now() + 300000,
+    current,
+    done: 2, passed: 1, combo: 2, bestCombo: 2, xp: 55,
+    usedIds: ["n-toast"],
+    goals: [{ id: "gold1", text: "Talk to new guys", target: 3, done: 1, deadlineAt: Date.now() + 900000, completedAt: null, expired: false }],
+  });
+
+  for (const [label, cur] of [["mid-mission", "n-nearest-night"], ["mid-countdown", null]]) {
+    await page.evaluate(n => {
+      const save = JSON.parse(localStorage.getItem("captivate.save.v1"));
+      save.night = n;
+      localStorage.setItem("captivate.save.v1", JSON.stringify(save));
+    }, legacy(cur));
+    await page.reload({ waitUntil: "load" });
+    await page.waitForSelector("#pane-home.active .card", { timeout: 8000 });
+    await page.evaluate(() => App.show("night"));
+    await page.waitForFunction(() => document.getElementById("pane-night").classList.contains("active"));
+    const text = (await page.locator("#pane-night").innerText()).trim();
+    assert(text.length > 10, `legacy ${label} save rendered ${text.length} chars`);
+    const n = await nightState(page);
+    assert(Array.isArray(n.setlist) && typeof n.setIdx === "number", `legacy ${label} save was not backfilled`);
+  }
+
+  // resolving from a legacy save refills the setlist instead of dead-ending
+  await page.evaluate(() => { Store.state.night.current = "n-nearest-night"; Store.save(); NightMode.render(); });
+  await page.locator("#pane-night button", { hasText: "Did it" }).click();
+  await page.waitForTimeout(300);
+  await closeAnyModal(page);
+  const after = await nightState(page);
+  assertEq(after.setlist.length, 3, "a legacy save did not get a fresh setlist after resolving");
+
+  await page.evaluate(() => { Store.state.night = { active: false }; Store.save(); });
+  await page.reload({ waitUntil: "load" });
+  await page.waitForSelector("#pane-home.active .card", { timeout: 8000 });
 });
 
 /* --- 5. modal open/close + settings persistence --- */
 await step("5. modal opens/closes; API key saves and survives a reload", async () => {
   await openTab(page, "quests");
-  const howto = page.locator("#pane-quests button", { hasText: "How do I do this?" }).first();
+  const howto = page.locator("#pane-quests button", { hasText: /^How$/ }).first();
   if (await howto.count()) {
     await howto.click();
     await page.waitForSelector("#modal-layer:not(.hidden)", { timeout: 4000 });
@@ -759,6 +964,59 @@ await step("12. review fixes: toast over modal, blur budget, chrome contrast, qu
     `a graded quiz option lost its raised surface (${gradedBg.cls}: ${gradedBg.bgImage})`);
   assert(gradedBg.border !== "rgb(50, 42, 78)", "a graded quiz option lost its state border colour");
   await shot(page, "12-quiz-raised");
+});
+
+/* --- 13. wordiness budget (docs/adhd-ux-review.md P2) --- */
+await step("13. no UI string over 20 words; quest cards lead with one sentence", async () => {
+  /* 13a — static copy lint. js/data/ is content, js/demos.js is demo captions,
+     and analyzer's systemPrompt() is model instructions, not UI: those are
+     fenced off with lint-copy-ignore markers. Everything a user reads on a
+     surface is capped at 20 words. */
+  const skipFiles = new Set(["demos.js"]);
+  const offenders = [];
+  for (const f of (await fsp.readdir(path.join(ROOT, "js"))).filter(f => f.endsWith(".js"))) {
+    if (skipFiles.has(f)) continue;
+    const lines = (await fsp.readFile(path.join(ROOT, "js", f), "utf8")).split("\n");
+    let ignoring = false;
+    lines.forEach((line, i) => {
+      if (line.includes("lint-copy-ignore-start")) ignoring = true;
+      if (line.includes("lint-copy-ignore-end")) { ignoring = false; return; }
+      if (ignoring) return;
+      const re = /"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'/g;
+      let m;
+      while ((m = re.exec(line))) {
+        const str = m[1] ?? m[2] ?? "";
+        const words = str.trim().split(/\s+/).filter(w => /[A-Za-z0-9]/.test(w)).length;
+        if (words > 20) offenders.push(`${f}:${i + 1} (${words}w) ${str.slice(0, 60)}…`);
+      }
+    });
+  }
+  assert(!offenders.length, `${offenders.length} UI string(s) over 20 words:\n        ${offenders.slice(0, 5).join("\n        ")}`);
+
+  /* 13b — quest cards render the first sentence only; the full text still
+     lives in the how-to modal, so nothing is lost. */
+  await openTab(page, "quests");
+  const descs = await page.evaluate(() =>
+    [...document.querySelectorAll("#pane-quests .quest-desc")].map(d => d.textContent.trim()));
+  assert(descs.length >= 3, `only ${descs.length} quest cards rendered`);
+  for (const d of descs) {
+    const sentences = d.split(/[.!?](?:\s|$)/).filter(s => s.trim().length).length;
+    assert(sentences <= 1, `a quest card still renders ${sentences} sentences: "${d.slice(0, 60)}…"`);
+  }
+  const clamp = await page.evaluate(() => getComputedStyle(document.querySelector("#pane-quests .quest-desc")).webkitLineClamp);
+  assertEq(clamp, "2", ".quest-desc lost its 2-line clamp");
+
+  // measured density, for the record (see the "As built" section of the review)
+  const density = {
+    questWords: await countWords(page, "#pane-quests"),
+    questTappables: await countTappables(page, "#pane-quests"),
+    questHeight: await page.evaluate(() => document.getElementById("pane-quests").scrollHeight),
+  };
+  await openTab(page, "home");
+  density.homeWords = await countWords(page, "#pane-home");
+  density.homeTappables = await countTappables(page, "#pane-home");
+  console.log(`      · measured: quests ${density.questWords}w / ${density.questTappables} taps / ${density.questHeight}px · home ${density.homeWords}w / ${density.homeTappables} taps`);
+  await fsp.writeFile(path.join(SHOT_DIR, "density.json"), JSON.stringify(density, null, 2));
 });
 
 /* ---------- summary ---------- */

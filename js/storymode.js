@@ -798,18 +798,8 @@ var StoryMode = (() => {
     pane.appendChild(E("h2", { class: "pane-title", text: `🗺️ ${chapterTitle()}` }));
     pane.appendChild(E("div", { class: "pane-sub", text: `The Long Night in Nocturne · ${caught}/${StoryData.neons.length} caught · ${d.badges.length}/${StoryData.badges.length} badges` }));
 
-    // region rail
-    const rail = E("div", { class: "story-rail" });
-    for (const r of StoryData.regions) {
-      const done = regionComplete(r.id);
-      const unl = regionUnlocked(r.id);
-      rail.appendChild(E("div", { class: "story-rail-node " + (done ? "done" : (unl ? "open" : "locked")), title: r.name }, [
-        E("div", { class: "srn-ico", text: done ? (badgeById(gymOfRegion(r.id).badge) || {}).emoji || r.emoji : r.emoji }),
-        E("div", { class: "srn-name", text: r.name }),
-        E("div", { class: "srn-count", text: unl ? `${caughtInRegion(r.id)}/6` : "🔒" }),
-      ]));
-    }
-    pane.appendChild(rail);
+    // The region rail used to repeat every floor that "Floors behind you" and
+    // "Still ahead" already list — one pass over the floors is enough.
 
     // completed regions, collapsed above the active card
     const doneRegions = StoryData.regions.filter(r => regionComplete(r.id));

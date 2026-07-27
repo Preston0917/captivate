@@ -31,7 +31,7 @@ const Trainer = (() => {
       UI.el("div", { class: "quest-ico", text: "📖" }),
       UI.el("div", { class: "quest-body" }, [
         UI.el("div", { class: "quest-name", text: "Book Lingo Glossary" }),
-        UI.el("div", { class: "quest-desc", text: "Every phrase the books use — sparker, thread theory, cue cluster, baseline — decoded in plain English with real examples." }),
+        UI.el("div", { class: "quest-desc", text: "Sparker, thread theory, cue cluster — decoded." }),
         UI.el("div", { class: "quest-meta" }, [
           UI.el("span", { class: "chip", text: `${LingoContent.terms.length} terms` }),
         ]),
@@ -95,7 +95,7 @@ const Trainer = (() => {
     const pane = document.getElementById("pane-trainer");
     pane.innerHTML = "";
     pane.appendChild(UI.el("h2", { class: "pane-title", text: "📖 Book Lingo" }));
-    pane.appendChild(UI.el("div", { class: "pane-sub", text: "The books coin a lot of phrases. Here's every one in plain English — tap a term for the full story." }));
+    pane.appendChild(UI.el("div", { class: "pane-sub", text: "Every phrase the books coin, in plain English." }));
 
     const search = UI.el("input", {
       class: "lingo-search", type: "search", placeholder: "🔎 Search terms… (e.g. baseline, sparker)",

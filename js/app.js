@@ -54,7 +54,7 @@
         UI.el("div", { class: "field" }, [
           UI.el("label", { text: Native.isNative ? "API key (stored in the iOS Keychain)" : "API key (stored only in this browser)" }),
           keyInput,
-          UI.el("div", { class: "hint", text: "Used for the transcript analyzer. The key never leaves your device except to call api.anthropic.com directly. Personal use only — don't host this page publicly with a key saved." }),
+          UI.el("div", { class: "hint", text: "Stays on this device. Used only by the analyzer." }),
         ]),
         UI.el("div", { class: "field" }, [
           UI.el("label", { text: "Model" }),
@@ -99,7 +99,7 @@
           UI.el("h3", { text: "🔔 Reminders" }),
           UI.el("div", { class: "field" }, [
             UI.el("label", { style: "display:flex; align-items:center; gap:8px" }, [toggle, UI.el("span", { text: "Send me reminders" })]),
-            UI.el("div", { class: "hint", text: "Two friendly nudges a day, and a heads-up when a night goal is close. Never a guilt trip — you can turn them off any time." }),
+            UI.el("div", { class: "hint", text: "Two nudges a day. Off any time." }),
           ]),
           UI.el("div", { class: "field" }, [
             UI.el("label", { text: "Quest nudge" }),

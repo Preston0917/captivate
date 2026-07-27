@@ -72,7 +72,6 @@
 .skill-row,
 .badge,
 .dex-tile,
-.story-rail-node,
 .gym-card,
 .modal-card {
   background:
@@ -224,7 +223,10 @@ h2.pane-title { font-size: 1.25rem; margin-bottom: 4px; }
 .quest-ico { font-size: 26px; flex: none; margin-top: 2px; }
 .quest-body { flex: 1; min-width: 0; }
 .quest-name { font-weight: 700; font-size: 0.98rem; }
-.quest-desc { color: var(--ink-dim); font-size: 0.85rem; margin-top: 3px; line-height: 1.45; }
+.quest-desc {
+  color: var(--ink-dim); font-size: 0.85rem; margin-top: 3px; line-height: 1.45;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+}
 .quest-meta { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; align-items: center; }
 .chip {
   font-size: 0.7rem; font-weight: 700; padding: 3px 9px; border-radius: 20px;
@@ -543,7 +545,12 @@ h2.pane-title { font-size: 1.25rem; margin-bottom: 4px; }
   font-weight: 700; font-size: 0.85rem; color: var(--ink-dim);
 }
 .seg.on { border-color: var(--gold); color: var(--gold); background: rgba(245, 196, 81, 0.08); }
+.night-tweaks { margin-top: 10px; display: grid; gap: 8px; }
 .night-wait { text-align: center; padding: 22px 14px; }
+/* tonight's setlist, as 3 glyphs: done · now · queued */
+.set-dots { justify-content: center; margin-top: 12px; }
+.set-dots .gdot { width: 18px; height: 6px; }
+.gdot.now { background: var(--gold); border-color: var(--gold); opacity: 0.55; }
 .night-clock {
   font-size: 3rem; font-weight: 800; color: var(--gold);
   font-variant-numeric: tabular-nums; margin-top: 6px;
@@ -575,22 +582,6 @@ h2.pane-title { font-size: 1.25rem; margin-bottom: 4px; }
 
 /* ---------- Story Mode ---------- */
 /* ===== story mode ===== */
-
-/* --- journey: region rail --- */
-.story-rail { display: flex; gap: 6px; margin: 4px 0 10px; }
-.story-rail-node {
-  flex: 1; min-width: 0; text-align: center; padding: 8px 4px;
-  border: 1px solid var(--card-edge);
-}
-.story-rail-node.locked { opacity: 0.42; filter: grayscale(0.8); }
-.story-rail-node.open { border-color: var(--gold); }
-.story-rail-node.done { border-color: var(--good); }
-.story-rail-node .srn-ico { font-size: 20px; line-height: 1.2; }
-.story-rail-node .srn-name {
-  font-size: 0.62rem; font-weight: 700; color: var(--ink-dim); margin-top: 2px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.story-rail-node .srn-count { font-size: 0.62rem; color: var(--ink-faint); margin-top: 1px; }
 
 /* --- story text --- */
 .story-beat p {
