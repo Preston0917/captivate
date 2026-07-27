@@ -771,6 +771,8 @@ var CuesContent = {
         "We got this — see you at kickoff."
       ] },
     { id: "cues-q-chameleon", name: "Verbal Chameleon", icon: "🦎", xp: 25, type: "tally", goal: 3, minLevel: 3,
+      // "venue" is one example word in the tip, not an hour: this is any-time.
+      when: "anytime",
       axis: "warm", skill: "cues-verbal", source: "Cues Ch.9",
       desc: "In one conversation, reuse 3 of the other person's exact words or phrases.",
       tip: "Match their vocabulary (client vs customer, truck vs rig) — early mirroring beats late mirroring. Never mimic what feels fake.",

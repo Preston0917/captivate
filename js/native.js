@@ -126,15 +126,17 @@ const Native = (() => {
        200–206  streak keeper, one per evening for the next 7
        300–311  night-mode prompt cadence (live session only)
        400–499  night-goal warning/deadline pairs
+       500–511  day-burst cadence (only while a burst is live)
      ============================================================ */
 
   const QUEST_IDS  = [100, 106];
   const STREAK_IDS = [200, 206];
   const NIGHT_IDS  = [300, 311];
   const GOAL_IDS   = [400, 499];
+  const DAY_IDS    = [500, 511];
 
   function ourId(id) {
-    return [QUEST_IDS, STREAK_IDS, NIGHT_IDS, GOAL_IDS]
+    return [QUEST_IDS, STREAK_IDS, NIGHT_IDS, GOAL_IDS, DAY_IDS]
       .some(r => id >= r[0] && id <= r[1]);
   }
 
@@ -285,6 +287,42 @@ const Native = (() => {
     return out;
   }
 
+  /* Day Mode ships NO scheduled notification by default. The 10:00 quest nudge
+     already covers the board, and its copy is safe by construction now: the
+     daily slate can never contain a `when:"night"` quest, so a day nudge can
+     never tease a club mission. These fire only inside a burst he started. */
+  function dayNotifs() {
+    const s = Store.state;
+    const b = s.dayBurst;
+    if (!b || !b.active || !b.endsAt || b.endsAt <= Date.now()) return [];
+
+    const mins = (s.settings.day && s.settings.day.burstMins) || 30;
+    const stepMs = Math.max(5, Math.round(mins / 3)) * 60 * 1000;
+    const out = [];
+    const slots = DAY_IDS[1] - DAY_IDS[0] + 1;
+    let t = (b.startedAt || Date.now()) + stepMs;
+    let slot = 0;
+    while (slot < slots && t <= b.endsAt) {
+      if (t > Date.now() + 30 * 1000) {
+        out.push({
+          id: DAY_IDS[0] + slot,
+          title: "☀️ Next one",
+          body: "Next one's ready — small, then back to your day.",
+          schedule: { at: new Date(t), allowWhileIdle: true },
+          extra: { pane: "quests" },
+        });
+        slot++;
+      }
+      t += stepMs;
+    }
+    return out;
+  }
+
+  // Debug export: the composed list, without touching the scheduler.
+  function notifPlan() {
+    return questNotifs(notifCfg()).concat(streakNotifs(notifCfg()), nightNotifs(), dayNotifs());
+  }
+
   let rescheduleTimer = null;
 
   // Coalesces the bursts of calls that come from logging a rep (rep → quest →
@@ -312,7 +350,7 @@ const Native = (() => {
     const perm = await LN.checkPermissions();
     if (!perm || perm.display !== "granted") return;
 
-    const list = questNotifs(cfg).concat(streakNotifs(cfg), nightNotifs());
+    const list = questNotifs(cfg).concat(streakNotifs(cfg), nightNotifs(), dayNotifs());
     if (list.length) await LN.schedule({ notifications: list });
   }
 
@@ -410,6 +448,7 @@ const Native = (() => {
     getApiKey, setApiKey, hasApiKey,
     haptic,
     rescheduleNotifications, enableNotifications, pendingCount,
+    notifPlan, ourId,
     importFile,
   };
 })();

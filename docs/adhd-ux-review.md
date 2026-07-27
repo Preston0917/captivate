@@ -262,3 +262,24 @@ Path to a live mission: **3 taps + 1 modal + a 20s wait → 1 tap, 0 modals, 0 w
 - No streaks-as-pressure, no loss framing, no new notification types, no "you missed" copy. Passing stays free (`resolve(false)` behaviour unchanged).
 - No restyle: Liquid Glass tokens, blur, neon borders, gold primary all stay. Every change above is density, defaults, or disclosure.
 - Don't remove the ability to configure — demote it. Cadence, intensity, extra goals, side quests, deck browsing all survive, one tap off the main path.
+
+---
+
+## 6. Day Mode as built (2026-07-27)
+
+The Quest Board became **Today** — one time-aware board (`docs/day-mode-design.md`). P3.2 landed
+as a side effect: side quests + the custom-quest author now live behind one collapsed
+`More quests` row, which is what paid for the focus card's height.
+
+Measured, fresh save, headless Chromium 390×844 (counters unchanged, e2e steps 16e / 13):
+
+| Screen | Tappables | Words | Height |
+|---|---:|---:|---:|
+| Quest Board → **Today** (collapsed) | 21 → 20 → **8** | 325 → 252 → **67** | 2204 → 1848 → **757px** |
+| Focus card (the day mission itself) | **5** | **13** excl. mission + openers | — |
+| Home, fresh save | 4 → **4** | 143 → 109 → **96** | — |
+| Home, with the "one rep away" card up | **4** | ~127 → **108** | — |
+
+Deviation 4 of §4 is closed: the Quest Board's 180-word / 1500px targets are met (67w / 757px),
+and Home holds ≤110 in **both** states — the pip card lost its 6-word sub-line and 3 words of
+headline, and the quest-shortcut card is gone (its job is the Live card's during the day).

@@ -77,7 +77,7 @@ const NightMode = (() => {
       say: ["It's filling up fast tonight."] },
   ];
 
-  const TIER_XP = { 0: 8, 1: 15, 2: 25, 3: 40 };
+  const TIER_XP = LiveEngine.TIER_XP;   // shared ladder — Day pays the same
   const LEVELS = {
     1: { name: "Nearby", tiers: [1] },
     2: { name: "Mixed", tiers: [1, 1, 2, 2] },
@@ -125,17 +125,9 @@ const NightMode = (() => {
     const n = ns();
     const rand = Store.seededRandom(`${Store.todayKey()}|night${n.shiftIndex}|set${n.setNo}`);
     const tiers = LEVELS[n.cfg.level] ? LEVELS[n.cfg.level].tiers : LEVELS[2].tiers;
-    const picks = [];
-    for (let i = 0; i < SET_SIZE; i++) {
-      const tier = tiers[Math.floor(rand() * tiers.length)];
-      let pool = PROMPTS.filter(p => p.tier === tier && !n.usedIds.includes(p.id) && !picks.includes(p.id));
-      if (!pool.length) pool = PROMPTS.filter(p => p.tier > 0 && !n.usedIds.includes(p.id) && !picks.includes(p.id));
-      if (!pool.length) { n.usedIds = []; pool = PROMPTS.filter(p => p.tier > 0 && !picks.includes(p.id)); }
-      if (!pool.length) break;
-      picks.push(pool[Math.floor(rand() * pool.length)].id);
-    }
-    picks.sort((a, b) => tierOf(a) - tierOf(b));   // easiest first: lowest activation energy leads
-    n.setlist = picks;
+    const { picks, reset } = LiveEngine.pickSet(PROMPTS, { tiers, rand, size: SET_SIZE, exclude: n.usedIds });
+    if (reset) n.usedIds = [];      // the pool ran dry mid-draw; start it over
+    n.setlist = picks;              // already sorted easiest-first by the engine
     n.setIdx = 0;
     Store.save();
   }
@@ -201,12 +193,12 @@ const NightMode = (() => {
     const n = ns();
     const cur = PROMPTS.find(x => x.id === n.current);
     const baseTier = (cur && cur.tier > 0) ? cur.tier : tierOf(n.setlist[n.setIdx]);
-    const off = id => id === (cur && cur.id) || n.setlist.includes(id) || n.usedIds.includes(id);
-    let pool = PROMPTS.filter(p => p.tier === baseTier && !off(p.id));
-    if (!pool.length) pool = PROMPTS.filter(p => p.tier > 0 && !off(p.id));
-    if (!pool.length) pool = PROMPTS.filter(p => p.tier > 0 && p.id !== (cur && cur.id));
-    if (!pool.length) return;
-    const p = pool[Math.floor(Math.random() * pool.length)];
+    const p = LiveEngine.swapPick(PROMPTS, {
+      tier: baseTier,
+      current: cur && cur.id,
+      exclude: n.setlist.concat(n.usedIds),
+    });
+    if (!p) return;
     Native.haptic("tap");
     n.current = p.id;
     n.setlist[n.setIdx] = p.id;
@@ -475,8 +467,7 @@ const NightMode = (() => {
       n.done += 1;
       n.combo += 1;
       n.bestCombo = Math.max(n.bestCombo, n.combo);
-      const comboBonus = Math.min(25, (n.combo - 1) * 5);
-      const xp = TIER_XP[p.tier] + comboBonus;
+      const xp = TIER_XP[p.tier] + LiveEngine.comboBonus(n.combo);
       n.xp += xp;
       n.current = null;
       n.nextAt = Date.now() + n.cfg.interval * 60 * 1000;
@@ -562,10 +553,7 @@ const NightMode = (() => {
     return pane && pane.classList.contains("active");
   }
 
-  function fmt(ms) {
-    const t = Math.max(0, Math.ceil(ms / 1000));
-    return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`;
-  }
+  const fmt = LiveEngine.fmtClock;   // ms → "4:07"
 
   /* ---------- rendering ---------- */
   function render() {

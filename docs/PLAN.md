@@ -44,8 +44,13 @@ quest ideas), then converted to JS data files:
   microexpression flashcards, sparker tips, ~25 quests.
 - `js/data/cues-content.js` — charisma scale + cue channels (body warmth/power, danger zone,
   vocal, verbal, imagery), cue decks/flashcards, cue-spotting tally quests.
+- `js/data/day-missions-data.js` — 26 daytime missions (tiers 0–3) written for this app, not
+  distilled from a book: queue, cafe, gym, store, street, transit, campus, park. Each carries
+  `when:"day"`, a `tier` off the shared `LiveEngine.TIER_XP` ladder, and a `ctx` label.
+  See `docs/day-mode-design.md`.
 
 Adding content = appending to those arrays; the engine picks it up automatically.
+Any quest that names a night-only place must carry an explicit `when` — e2e step 16i enforces it.
 
 ## 4. Conversation Analyzer
 

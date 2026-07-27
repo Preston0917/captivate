@@ -6,7 +6,7 @@
 
 const QuestData = {
   get quests() {
-    return CaptivateContent.quests.concat(CuesContent.quests);
+    return CaptivateContent.quests.concat(CuesContent.quests, DayMissions.quests);
   },
 
   badges: [
@@ -23,5 +23,9 @@ const QuestData = {
     { id: "night-combo5",   icon: "⚡", name: "On a Heater",      desc: "Chain a ×5 combo in one night." },
     { id: "night-ten",      icon: "🎆", name: "Life of the Party", desc: "10 actions in a single shift." },
     { id: "called-shot",    icon: "🎯", name: "Called My Shot",   desc: "Hit a night goal before its deadline." },
+    { id: "day-first",      icon: "☀️", name: "Daylight",         desc: "Complete your first day mission." },
+    { id: "day-ten",        icon: "🌞", name: "Broad Daylight",   desc: "Complete 10 day missions." },
+    { id: "day-three-min",  icon: "⏱️", name: "Three Minutes",    desc: "Keep a stranger talking for three minutes." },
+    { id: "round-clock",    icon: "🌗", name: "Round the Clock",  desc: "A day mission and a night action, same day." },
   ],
 };

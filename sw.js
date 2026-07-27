@@ -10,7 +10,7 @@
    that isn't a GET are never intercepted or cached.
    ============================================================ */
 
-const CACHE_VERSION = "captivate-v8";
+const CACHE_VERSION = "captivate-v9";
 
 const SHELL = [
   "./",
@@ -20,13 +20,16 @@ const SHELL = [
   "./js/data/captivate-content.js",
   "./js/data/cues-content.js",
   "./js/data/lingo-data.js",
+  "./js/data/day-missions-data.js",
   "./js/data/quests-data.js",
   "./js/data/story-data.js",
   "./js/native.js",
+  "./js/live-engine.js",
   "./js/demos.js",
   "./js/state.js",
   "./js/ui.js",
   "./js/quests.js",
+  "./js/daymode.js",
   "./js/nightmode.js",
   "./js/storymode.js",
   "./js/trainer.js",

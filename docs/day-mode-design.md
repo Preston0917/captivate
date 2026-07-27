@@ -396,3 +396,77 @@ refactor. New steps, numbered after the existing 13:
 - **No re-rolling the slate mid-day**, no "refresh my quests" button, no per-window separate slates.
 - **Not now:** streaks per context, a day-mode map, photo logging, weekly day-mode recap, Apple Watch
   surfacing, and any auto-detection of "he's out of the house".
+
+---
+
+## 11. As built (2026-07-27)
+
+Shipped on `sw.js` `captivate-v9`. `tests/e2e.mjs` went **30 → 40 steps, all green**, with the
+existing 30 unchanged in substance (two mechanical edits, noted below).
+
+### Measured against §9
+
+| Acceptance criterion | Target | Measured |
+|---|---|---|
+| Home → day board, first mission expanded | 1 tap, 0 modals | **1 tap, 0 modals** (16b) |
+| `dailyQuests.ids.length` | 3 | **3** (16a) |
+| night-tagged quests in the slate | 0 at any hour, any seed | **0** — impossible by construction (16a/16b) |
+| slate stable across reload + window change | identical | **identical**; 13:00 roll === 23:00 roll (16a/16c) |
+| 13:00 completion still complete at 23:00 | yes | **yes**, `questLog` + streak intact, no re-roll (16d) |
+| Today pane, collapsed | ≤12 taps / ≤180 w / ≤1500px | **8 / 67 / 757px** (from 21 / 325 / 2204) |
+| Focus card | ≤5 taps / ≤30 words | **5 / 13** (excl. mission + openers) |
+| Home | ≤110 words, 1 Live CTA, 6 tabs | **96** fresh · **108** with the pip card · 1 · 6 |
+| Every mission `desc` | ≤20 words | **≤20**, enforced by 16i |
+| Day pool | 26 = 4/10/7/5, all tagged | **26 = 4/10/7/5**, `when`/`tier`/`ctx`/`skill`/ladder XP all present (16i) |
+| Notifications | 0 new by default; 500–511 only in a burst | **0 / 500–511 only**, cancelled on end (16h) |
+| Night steps 4a–4i | green, untouched | **green, untouched** |
+
+### Night-regression proof
+
+`js/nightmode.js` changed in exactly the four places §8.4 allows: `buildSetlist()`, `swap()`,
+the `TIER_XP` literal, and `fmt()`. A 2190-case fixture (40 days × 3 levels × 3 shifts × 6 refills,
+plus 30 swap draws) replayed through the pre-extraction code and through `LiveEngine` hashes to
+the **same sha256 `eb62422f…`** — seeding is bit-identical, not merely stable.
+
+### Deviations from §1–§8
+
+1. **New steps are numbered 16a–16j, not 14a–14i.** Commit `b9cc8bd` had already taken 14a–15b
+   for the grid/reference work. Content is per §7, plus a new **16j** that unit-tests `LiveEngine`
+   itself (determinism, easiest-first sort, no tier-0, no mutation of the caller's `exclude`,
+   ladder, `comboBonus`, `fmtClock`).
+2. **The suite now pins a fake clock.** §5 makes Home's card time-dependent, so step 4b's
+   `hasText: "Night Mode"` would have depended on what time of day the suite ran. Steps 1–15 now
+   run against a clock pinned to 21:00 — the window they were all written in — and the Day Mode
+   steps open their own contexts at 13:00 / 23:00. Not one line inside 4a–4i changed; the suite
+   simply stopped being wall-clock dependent.
+3. **Step 3 targets `.focus-card`** instead of the old `Today's Quests` → `.quest-card` walk.
+   Same assertions (XP toast, HUD XP, streak); the board it walks no longer exists.
+4. **`LiveEngine.pickSet` returns `{ picks, reset }`** rather than clearing the caller's
+   `exclude` array inline (which is what `n.usedIds = []` did). Keeps the engine free of argument
+   mutation; the night wrapper does the clear. rand() call order is unaffected.
+5. **`Store.state.dayBurst` is a new top-level key**, not `settings.day`. `settings.day` holds the
+   config §4.2 specifies (`burstMins`, `lastBurstDay`, `bursts`); live burst state needs to be
+   wiped independently, exactly like `state.night` vs `settings.night`.
+6. **Burst cadence = `burstMins / 3`** (10 min inside a 30-min burst), capped by the 12 slots.
+   §4.2 calls 30 both "the burst" and "the interval"; twelve pings in half an hour would be a nag,
+   which §5 of the ADHD review forbids. No extra settings key was added.
+7. **`round-clock` is derived, not newly tracked.** §10 forbids touching `nightmode.js` beyond
+   `buildSetlist`/`swap`, so the badge reads state that already persists: a day mission logged
+   today **and** (a live shift with ≥1 action, or `settings.night.shifts > 0` for today). Slightly
+   looser than "a night action"; still a pure carrot, still unlosable.
+8. **The Tonight lane excludes the weekly boss.** §2.4 renders a night boss in its own section
+   with a `🌙 Tonight` chip; listing it in the lane as well put the same quest on the board twice.
+   With `cap-q-boss-room` as the only night-tagged quest in the pool today, the lane is therefore
+   usually empty and correctly does not render — 16b/16c exercise it with an injected fixture,
+   which is also the real regression guard for the night content §2.4 anticipates.
+9. **`cues-q-chameleon` gained `when: "anytime"`.** §2.4 calls it a false hit, but the §7 lint
+   demands an *explicit* tag on anything matching the night vocabulary. Tagging it is the lint
+   working as designed. `cap-q-boss-room` is the only `when: "night"` quest.
+10. **The how-to modal now renders `q.tip` beneath `q.how`** when a quest has both. Day missions
+    carry their opener-hint in `tip`; it would otherwise never be shown.
+11. **Day missions render their full `desc` on the focus card** (`.fc-text`), not the clamped
+    first sentence. They are written to ≤20 words for exactly this reason. Book quests in the
+    browse layer keep `.quest-desc` and its 2-line clamp, so step 13b is unaffected.
+12. **The `More quests` disclosure is built eagerly and hidden**, so `display:none` costs no
+    height and no tappables while the browse layer stays measurable.
+13. **Not done:** nothing in §8's checklist was skipped.

@@ -63,12 +63,14 @@ const Home = (() => {
       ]));
     }
 
-    // Night Mode shortcut — the live-session mode
+    // The Live card — one card, adapting to the window. Night after 17:00 or
+    // mid-shift; the day board otherwise. Either way it is one tap to a mission,
+    // and it is the only Live CTA on the pane.
+    const live = liveCard();
     pane.appendChild(UI.el("div", { class: "card daily-spark", style: "border-color:var(--gold)" }, [
-      UI.el("div", { class: "spark-label", style: "color:var(--gold)", text: NightMode.active ? "🌙 Shift in progress" : "🌙 Night Mode" }),
-      UI.el("div", { class: "spark-text", text: NightMode.active ? "You're on the clock — jump back in." : "Three missions, picked for you, on a timer." }),
-      // One tap: starts the shift AND lands on the first mission. No setup screen.
-      UI.el("button", { class: "btn primary", style: "margin-top:10px", text: NightMode.active ? "Back to my shift" : "Start a shift", onclick: () => NightMode.startShift() }),
+      UI.el("div", { class: "spark-label", style: "color:var(--gold)", text: live.label }),
+      UI.el("div", { class: "spark-text", text: live.text }),
+      UI.el("button", { class: "btn primary", style: "margin-top:10px", text: live.btn, onclick: live.go }),
     ]));
 
     // Story Mode shortcut
@@ -85,8 +87,7 @@ const Home = (() => {
         UI.el("div", { style: "display:flex; align-items:center; gap:10px" }, [
           UI.el("div", { style: "font-size:24px", text: "⚡" }),
           UI.el("div", { style: "flex:1" }, [
-            UI.el("div", { style: "font-weight:700; font-size:.9rem", text: `${nearest.name} is ${nearest.delta} XP from its next mastery pip` }),
-            UI.el("div", { class: "muted", style: "font-size:.78rem", text: "One quest in that skill closes it." }),
+            UI.el("div", { style: "font-weight:700; font-size:.9rem", text: `${nearest.name}: ${nearest.delta} XP to its next pip` }),
           ]),
           UI.el("button", { class: "btn small primary", text: "Go", onclick: () => App.show("quests") }),
         ]),
@@ -113,17 +114,8 @@ const Home = (() => {
       statTile(s.totalXp, "XP"),
     ]));
 
-    // Quest shortcut
-    const remaining = s.dailyQuests.ids.length - s.dailyQuests.done.length;
-    pane.appendChild(UI.el("div", { class: "card" }, [
-      UI.el("h3", { text: remaining > 0 ? `⚔️ ${remaining} quest${remaining > 1 ? "s" : ""} waiting` : "🌟 All daily quests done!" }),
-      UI.el("div", { class: "muted", text: remaining > 0 ? "Out there, not in here." : "Fresh ones tomorrow — or go train." }),
-      UI.el("button", {
-        class: "btn primary", style: "margin-top:10px",
-        text: remaining > 0 ? "Open quest board" : "Go train",
-        onclick: () => App.show(remaining > 0 ? "quests" : "trainer"),
-      }),
-    ]));
+    // The quest-shortcut card is gone: opening the board is the Live card's
+    // job during the day, and the tab bar covers it at night.
 
     // Analyzer shortcut
     pane.appendChild(UI.el("div", { class: "card" }, [
@@ -131,6 +123,21 @@ const Home = (() => {
       UI.el("div", { class: "muted", text: "Paste a transcript. Get scored and coached." }),
       UI.el("button", { class: "btn", style: "margin-top:10px", text: "Analyze a transcript", onclick: () => App.show("analyzer") }),
     ]));
+  }
+
+  // Shift in progress → night → day. Night copy is unchanged; the day variant
+  // is one word shorter than the night one it replaces.
+  function liveCard() {
+    if (NightMode.active) {
+      return { label: "🌙 Shift in progress", text: "You're on the clock — jump back in.",
+               btn: "Back to my shift", go: () => NightMode.startShift() };
+    }
+    if (Store.isNightHour()) {
+      return { label: "🌙 Night Mode", text: "Three missions, picked for you, on a timer.",
+               btn: "Start a shift", go: () => NightMode.startShift() };
+    }
+    return { label: "☀️ Day Mode", text: "Three missions, waiting for the right moment.",
+             btn: "Today's missions", go: () => App.show("quests") };
   }
 
   function statTile(num, label) {

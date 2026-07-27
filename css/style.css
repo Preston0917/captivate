@@ -612,6 +612,45 @@ h2.pane-title { font-size: 1.25rem; margin-bottom: 4px; }
 .cg-legend { margin-top: 4px; }
 @media (min-width: 520px) { .cg-plane { max-width: 340px; } }
 
+/* ---------- Day Mode (the Today board) ----------
+   .focus-card reuses .night-prompt's shape so the one-thing-at-a-time
+   surface reads the same in both halves of the clock. No new tokens, and
+   no blur on the repeating .slate-row (Liquid Glass §5.3). */
+.focus-card {
+  text-align: center; padding: 20px 16px;
+  background: linear-gradient(150deg, #30225a, #191430);
+  border-color: var(--violet);
+}
+.focus-card .fc-ico { font-size: 40px; }
+.focus-card .fc-name { font-weight: 800; font-size: 0.95rem; margin-top: 6px; }
+.focus-card .fc-text { font-size: 1.05rem; font-weight: 700; line-height: 1.5; margin-top: 8px; }
+.focus-card .fc-meta { justify-content: center; margin-top: 10px; }
+.focus-card .say-chip { text-align: left; }
+.focus-card .section-label { text-align: left; }
+.focus-card .tally { justify-content: center; }
+.fc-row { display: flex; gap: 8px; margin-top: 8px; }
+.fc-row .btn { flex: 1; }
+
+.slate-row {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  margin-bottom: 8px; padding: 11px 12px; text-align: left;
+  background: var(--bg-2); border: 1px solid var(--card-edge);
+  border-radius: 11px; color: var(--ink); font-family: inherit;
+}
+.slate-row.done { opacity: 0.55; }
+.slate-row:active { border-color: var(--violet); }
+.slate-box { flex: none; font-size: 0.95rem; width: 18px; }
+.slate-name { flex: 1; min-width: 0; font-weight: 700; font-size: 0.88rem; line-height: 1.35; }
+
+.burst-strip {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; margin-bottom: 12px;
+}
+.burst-dot { color: var(--good); font-weight: 800; }
+.burst-left { font-weight: 800; font-variant-numeric: tabular-nums; color: var(--good); }
+.burst-say { color: var(--ink-dim); font-size: 0.8rem; }
+.disclose { margin-top: 10px; }
+
 /* ---------- Night Mode ---------- */
 .seg-row { display: flex; gap: 8px; }
 .seg {

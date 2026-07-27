@@ -281,6 +281,49 @@ const context = await browser.newContext({
 const page = await context.newPage();
 watch(page);
 
+/* ---------- clock control ----------
+   Home's Live card and the Tonight lane are time-aware now, so a suite that
+   ran on the wall clock would assert different copy at 1pm than at 9pm. Pin
+   the main page to a NIGHT hour for steps 1-15 (which is the window every one
+   of those steps was written against) and let the Day Mode steps below open
+   their own pages at their own hours. */
+function atHour(h, m = 0) {
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d;
+}
+const NIGHT_AT = atHour(21);
+const DAY_AT = atHour(13);
+const LATE_AT = atHour(23);
+
+// A throwaway context: fresh save, fresh clock, no service worker in the way.
+async function freshPage(when) {
+  const ctx = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 3, isMobile: true, hasTouch: true,
+    serviceWorkers: "block",
+  });
+  const p = await ctx.newPage();
+  watch(p);
+  await p.clock.install({ time: when });
+  await p.clock.resume();
+  await p.goto(`${BASE}/index.html`, { waitUntil: "load" });
+  await p.waitForSelector("#pane-home.active .card", { timeout: 8000 });
+  return { ctx, p };
+}
+
+const slateOf = p => p.evaluate(() => JSON.parse(JSON.stringify(Store.state.dailyQuests)));
+
+// Every quest id actually rendered onto the board, visible or not.
+const renderedQuests = p => p.evaluate(() =>
+  [...document.querySelectorAll("#pane-quests [data-qid]")].map(n => ({
+    id: n.dataset.qid,
+    when: (Quests.questById(n.dataset.qid) || {}).when || "anytime",
+  })));
+
+await page.clock.install({ time: NIGHT_AT });
+await page.clock.resume();
+
 /* --- 1. boot --- */
 await step("1. boots clean (no console errors, no failed requests)", async () => {
   await page.goto(`${BASE}/index.html`, { waitUntil: "load" });
@@ -314,29 +357,24 @@ await step("3. completes a daily quest → XP toast + HUD XP + streak", async ()
   const streakBefore = await hudStreak(page);
   assert(streakBefore.includes("0"), `expected a fresh 0 streak, got "${streakBefore}"`);
 
-  // first daily quest under "Today's Quests" — "do" type if there is one, else tally it out
+  // The board leads with ONE focus card — the first unfinished mission of the
+  // slate. That is the daily quest; the other two are one-line rows.
   const plan = await page.evaluate(() => {
-    const pane = document.getElementById("pane-quests");
-    const kids = [...pane.children];
-    const start = kids.findIndex(k => k.classList.contains("section-label") && k.textContent.startsWith("Today's Quests"));
-    const cards = kids.slice(start + 1).filter(k => k.classList.contains("quest-card"));
-    for (let i = 0; i < cards.length; i++) {
-      const c = cards[i];
-      const idx = [...pane.querySelectorAll(".quest-card")].indexOf(c);
-      if ([...c.querySelectorAll("button")].some(b => b.textContent.includes("I did it"))) return { idx, type: "do" };
-      if (c.querySelector(".tally")) {
-        const goal = parseInt(c.querySelector(".tally-goal").textContent.replace(/\D/g, ""), 10);
-        const count = parseInt(c.querySelector(".tally-count").textContent, 10);
-        return { idx, type: "tally", clicks: Math.max(1, goal - count) };
-      }
+    const c = document.querySelector("#pane-quests .focus-card");
+    if (!c) return null;
+    if ([...c.querySelectorAll("button")].some(b => b.textContent.includes("Did it"))) return { type: "do" };
+    if (c.querySelector(".tally")) {
+      const goal = parseInt(c.querySelector(".tally-goal").textContent.replace(/\D/g, ""), 10);
+      const count = parseInt(c.querySelector(".tally-count").textContent, 10);
+      return { type: "tally", clicks: Math.max(1, goal - count) };
     }
     return null;
   });
   assert(plan, "no completable daily quest found");
 
-  const card = page.locator("#pane-quests .quest-card").nth(plan.idx);
+  const card = page.locator("#pane-quests .focus-card");
   if (plan.type === "do") {
-    await card.locator("button", { hasText: "I did it" }).click();
+    await card.locator("button", { hasText: "Did it" }).click();
   } else {
     for (let i = 0; i < plan.clicks; i++) {
       await card.locator(".tally-btn").nth(1).click();
@@ -1311,6 +1349,393 @@ await step("15b. every audited quest resolves its artifacts; grid copy stays und
   });
   assert(!long.length, `grid copy over 20 words: ${long.join(" | ")}`);
   await closeAnyModal(page);
+});
+
+/* --- 16. Day Mode: one time-aware board (docs/day-mode-design.md) --- */
+
+let daySlate = null;   // 16a/16b's slate, re-checked at night in 16c
+
+await step("16a. slate composition: 2 day missions + 1 book quest, seeded, no tier-0", async () => {
+  const { ctx, p } = await freshPage(DAY_AT);
+  try {
+    await openTab(p, "quests");
+    const slate = await slateOf(p);
+    assertEq(slate.ids.length, 3, "the daily slate is not 3");
+    const meta = await p.evaluate(ids => ids.map(id => {
+      const q = Quests.questById(id);
+      return { id, when: q.when || "anytime", tier: q.tier, xp: q.xp, boss: !!q.boss };
+    }), slate.ids);
+
+    assertEq(meta[0].when, "day", `slot A is not a day mission (${meta[0].id})`);
+    assertEq(meta[1].when, "day", `slot B is not a day mission (${meta[1].id})`);
+    assertEq(meta[0].tier, 1, `slot A is tier ${meta[0].tier}, expected 1`);
+    assert(meta[1].tier === 2 || meta[1].tier === 3, `slot B is tier ${meta[1].tier}, expected 2 or 3`);
+    assert(meta[0].tier < meta[1].tier, "the slate is not sorted easiest-first");
+    assert(meta[2].tier === undefined, `slot C carries a tier (${meta[2].id})`);
+    assert(meta[2].when !== "night", `slot C is night-tagged (${meta[2].id})`);
+    assert(!meta[2].boss, "slot C handed out the weekly boss");
+    for (const m of meta) assert(m.tier !== 0, `a tier-0 rescue was rolled into the slate (${m.id})`);
+    assertEq(meta[0].xp, 15, "a tier-1 mission does not pay the shared ladder's 15 XP");
+
+    // seeded: a reload re-derives the same three
+    await p.reload({ waitUntil: "load" });
+    await p.waitForSelector("#pane-home.active .card", { timeout: 8000 });
+    const after = await slateOf(p);
+    assertEq(after.ids.join(","), slate.ids.join(","), "the slate reshuffled across a reload");
+    daySlate = slate.ids.join(",");
+    await openTab(p, "quests");
+    await shot(p, "16a-today-board");
+  } finally { await ctx.close(); }
+});
+
+await step("16b. 13:00 — zero night content on the board, Home reads ☀️ Day Mode", async () => {
+  const { ctx, p } = await freshPage(DAY_AT);
+  try {
+    await openTab(p, "quests");
+    for (const q of await renderedQuests(p)) {
+      assert(q.when !== "night", `a night-tagged quest rendered at 1pm: ${q.id}`);
+    }
+    assertEq(await p.locator("#pane-quests button", { hasText: "Tonight" }).count(), 0,
+      "the Tonight lane rendered during day hours");
+
+    // …and it stays true once every night-tagged quest is level-eligible, and
+    // with a fresh piece of night content in the pool that isn't the boss.
+    await p.evaluate(() => {
+      Store.state.level = 8;
+      Store.state.customQuests.push({
+        id: "test-night-only", name: "Night Only Fixture", desc: "A club mission.",
+        when: "night", icon: "🌙", xp: 20, type: "do", minLevel: 1, source: "Test",
+      });
+      Store.save();
+      Quests.render();
+    });
+    for (const q of await renderedQuests(p)) {
+      assert(q.when !== "night", `a night-tagged quest rendered at 1pm at level 8: ${q.id}`);
+    }
+    assertEq(await p.locator("#pane-quests button", { hasText: "Tonight" }).count(), 0,
+      "the Tonight lane rendered during day hours at level 8");
+    await shot(p, "16b-day-board-level8");
+
+    await openTab(p, "home");
+    const liveCards = await p.evaluate(() =>
+      [...document.querySelectorAll("#pane-home .card")]
+        .filter(c => /day mode|night mode|shift in progress/i.test(c.innerText))
+        .map(c => c.innerText));
+    assertEq(liveCards.length, 1, `expected exactly one Live card on Home, got ${liveCards.length}`);
+    // .spark-label is uppercased in CSS, and innerText honours text-transform
+    assert(/☀️ day mode/i.test(liveCards[0]), `Home's Live card reads: ${liveCards[0].split("\n")[0]}`);
+    assertEq(await p.locator("#pane-home .card", { hasText: "quest board" }).count(), 0,
+      "the old quest-shortcut card is still on Home");
+
+    await p.locator("#pane-home .card", { hasText: "Day Mode" }).locator("button").click();
+    await p.waitForFunction(() => document.getElementById("pane-quests").classList.contains("active"), null, { timeout: 3000 });
+    assertEq(await p.locator("#modal-layer:not(.hidden)").count(), 0, "the Live card opened a modal");
+    assertEq(await p.locator("#pane-quests .focus-card").count(), 1,
+      "one tap from Home did not land on an expanded first mission");
+    await shot(p, "16b-home-day-card");
+  } finally { await ctx.close(); }
+});
+
+await step("16c. 23:00 — Tonight lane appears, Live card flips, slate is byte-identical", async () => {
+  const { ctx, p } = await freshPage(LATE_AT);
+  try {
+    const slate = await slateOf(p);
+    assertEq(slate.ids.join(","), daySlate,
+      "the same calendar day rolled a different slate at 23:00 than at 13:00");
+
+    await openTab(p, "home");
+    const label = await p.locator("#pane-home .card", { hasText: "Night Mode" }).innerText();
+    assert(/🌙 night mode/i.test(label), `Home's Live card at 23:00 reads: ${label.split("\n")[0]}`);
+    await shot(p, "16c-home-night-card");
+
+    // Same fixture as 16b: night content that is not the weekly boss.
+    await p.evaluate(() => {
+      Store.state.level = 8;
+      Store.state.customQuests.push({
+        id: "test-night-only", name: "Night Only Fixture", desc: "A club mission.",
+        when: "night", icon: "🌙", xp: 20, type: "do", minLevel: 1, source: "Test",
+      });
+      Store.save();
+    });
+    await openTab(p, "quests");
+    assertEq(await p.locator("#pane-quests button", { hasText: "Tonight" }).count(), 1,
+      "the Tonight lane is missing inside the night window");
+    const rendered = await renderedQuests(p);
+    assert(rendered.some(q => q.id === "test-night-only"),
+      "the Tonight lane did not carry the night-tagged quest");
+    assertEq(rendered.filter(q => q.id === "test-night-only").length, 1,
+      "the night-tagged quest rendered twice on one board");
+    assertEq(rendered.filter(q => q.id === "cap-q-boss-room").length, 1,
+      "the night-tagged weekly boss is listed both above the fold and in the Tonight lane");
+    await p.locator("#pane-quests button", { hasText: "Tonight" }).click();
+    await p.waitForTimeout(150);
+    await shot(p, "16c-tonight-lane");
+  } finally { await ctx.close(); }
+});
+
+await step("16d. boundary: complete at 13:00, still complete at 23:00 — no re-roll", async () => {
+  const { ctx, p } = await freshPage(DAY_AT);
+  try {
+    await openTab(p, "quests");
+    const before = await slateOf(p);
+    await p.locator("#pane-quests .focus-card button", { hasText: "Did it" }).click();
+    await p.waitForTimeout(300);
+    await closeAnyModal(p);
+
+    const mid = await slateOf(p);
+    assertEq(mid.done.length, 1, "completing the focus card did not bank it");
+    const doneId = mid.done[0];
+    const streak = await p.evaluate(() => Store.state.streak);
+
+    // …the clock crosses into the night window
+    await p.clock.setSystemTime(LATE_AT);
+    await p.reload({ waitUntil: "load" });
+    await p.waitForSelector("#pane-home.active .card", { timeout: 8000 });
+    await openTab(p, "quests");
+
+    const after = await slateOf(p);
+    assert(await p.evaluate(() => Store.isNightHour()), "the clock did not move into the night window");
+    assertEq(after.ids.join(","), before.ids.join(","), "crossing 17:00 re-rolled the slate");
+    assertEq(after.done.join(","), doneId, "the 1pm completion did not survive the boundary");
+    assert(await p.evaluate(id => !!Store.state.questLog[id], doneId), "the questLog entry vanished at night");
+    assertEq(await p.evaluate(() => Store.state.streak), streak, "the streak moved across the boundary");
+    await shot(p, "16d-boundary-night");
+  } finally { await ctx.close(); }
+});
+
+await step("16e. day board budgets: ≤12 taps / ≤180 words / ≤1500px; focus ≤5 taps / ≤30 words", async () => {
+  const { ctx, p } = await freshPage(DAY_AT);
+  try {
+    await openTab(p, "quests");
+    const taps = await countTappables(p, "#pane-quests");
+    const words = await countWords(p, "#pane-quests");
+    const height = await p.evaluate(() => document.getElementById("pane-quests").scrollHeight);
+    assert(taps <= 12, `the Today board shows ${taps} tappables collapsed (cap is 12)`);
+    assert(words <= 180, `the Today board carries ${words} words collapsed (cap is 180)`);
+    assert(height <= 1500, `the Today board is ${height}px collapsed (cap is 1500)`);
+
+    const fcTaps = await countTappables(p, "#pane-quests .focus-card");
+    const fcWords = await countWords(p, "#pane-quests .focus-card", [".fc-text", ".say-chip"]);
+    assert(fcTaps <= 5, `the focus card shows ${fcTaps} tappables (cap is 5)`);
+    assert(fcWords <= 30, `the focus card carries ${fcWords} words excluding mission + openers (cap is 30)`);
+    console.log(`      · measured: today ${words}w / ${taps} taps / ${height}px · focus ${fcWords}w / ${fcTaps} taps`);
+
+    // Home budget, same fresh save
+    await openTab(p, "home");
+    const homeWords = await countWords(p, "#pane-home");
+    assert(homeWords <= 110, `Home carries ${homeWords} words (cap is 110)`);
+    // …and with the conditional "one rep away" card alive, which is the state
+    // that used to push Home to ~127 (docs/adhd-ux-review.md §4, deviation 4).
+    await p.evaluate(() => { Store.addXp(12, "cues-warmth-body"); Home.render(); });
+    const homeLoaded = await countWords(p, "#pane-home");
+    assert(await p.locator("#pane-home .card", { hasText: "next pip" }).count() === 1,
+      "the 'one rep away' card did not appear — this measurement is meaningless");
+    assert(homeLoaded <= 110, `Home carries ${homeLoaded} words with the pip card up (cap is 110)`);
+    assertEq(await p.locator(".tabbar .tab").count(), 6, "the tab bar left 6 tabs");
+    assertEq(await p.locator('.tab[data-pane="quests"] .tab-label').innerText(), "Today",
+      "the quests tab was not relabelled Today");
+    console.log(`      · measured: home ${homeWords}w`);
+    await shot(p, "16e-home-day");
+  } finally { await ctx.close(); }
+});
+
+await step("16f. ⇄ Swap replaces the mission in place — same tier, no modal, done untouched", async () => {
+  const { ctx, p } = await freshPage(DAY_AT);
+  try {
+    await openTab(p, "quests");
+    const before = await slateOf(p);
+    const beforeMeta = await p.evaluate(id => {
+      const q = Quests.questById(id); return { tier: q.tier, when: q.when };
+    }, before.ids[0]);
+
+    await p.locator("#pane-quests .focus-card button", { hasText: "Swap" }).click();
+    await p.waitForTimeout(200);
+
+    assertEq(await p.locator("#modal-layer:not(.hidden)").count(), 0, "Swap opened a modal");
+    assertEq(await p.locator("#pane-quests .focus-card").count(), 1, "Swap left more than one focus card");
+    const after = await slateOf(p);
+    assert(after.ids[0] !== before.ids[0], "Swap did not change the mission");
+    assertEq(after.ids.length, 3, "Swap resized the slate");
+    assertEq(after.ids.slice(1).join(","), before.ids.slice(1).join(","), "Swap touched the other slots");
+    assertEq(after.done.length, 0, "Swap marked something done");
+    assert(!(await p.evaluate(id => !!Store.state.questLog[id], before.ids[0])),
+      "the swapped-out mission was logged as completed");
+
+    const afterMeta = await p.evaluate(id => {
+      const q = Quests.questById(id); return { tier: q.tier, when: q.when };
+    }, after.ids[0]);
+    assertEq(afterMeta.tier, beforeMeta.tier, "Swap changed the tier");
+    assertEq(afterMeta.when, "day", "Swap brought in non-day content");
+    assert(await countTappables(p, "#pane-quests .focus-card") <= 5, "Swap added tappables to the focus card");
+    await shot(p, "16f-after-swap");
+  } finally { await ctx.close(); }
+});
+
+await step("16g. 🛟 Smaller serves a tier-0 rescue into the slot, and it pays 8 XP", async () => {
+  const { ctx, p } = await freshPage(DAY_AT);
+  try {
+    await openTab(p, "quests");
+    const before = await slateOf(p);
+    await p.locator("#pane-quests .focus-card button", { hasText: "Smaller" }).click();
+    await p.waitForTimeout(200);
+
+    const after = await slateOf(p);
+    const meta = await p.evaluate(id => {
+      const q = Quests.questById(id); return { tier: q.tier, when: q.when, xp: q.xp };
+    }, after.ids[0]);
+    assert(after.ids[0] !== before.ids[0], "🛟 Smaller did not replace the mission");
+    assertEq(meta.tier, 0, `🛟 Smaller served a tier-${meta.tier} mission`);
+    assertEq(meta.when, "day", "the rescue is not a day mission");
+    assertEq(meta.xp, 8, `a tier-0 rescue pays ${meta.xp} XP, expected 8`);
+    await shot(p, "16g-rescue");
+
+    await p.locator("#pane-quests .focus-card button", { hasText: "Did it" }).click();
+    const toast = p.locator(".toast").first();
+    await toast.waitFor({ state: "attached", timeout: 3000 });
+    assertEq((await toast.innerText()).trim(), "+8 XP", "the rescue did not pay the tier-0 8 XP");
+    await closeAnyModal(p);
+    assert(await p.evaluate(() => Store.state.lastRepDay === Store.todayKey()),
+      "the rescue did not log a real-world rep");
+    assertEq((await slateOf(p)).done.length, 1, "the rescue did not consume the focus slot");
+  } finally { await ctx.close(); }
+});
+
+await step("16h. burst lifecycle: ids 500-511 exist only while a burst is live", async () => {
+  const { ctx, p } = await freshPage(DAY_AT);
+  try {
+    await openTab(p, "quests");
+    const dayPlan = () => p.evaluate(() => Native.notifPlan()
+      .filter(n => n.id >= 500 && n.id <= 599)
+      .map(n => ({ id: n.id, at: +new Date(n.schedule.at) })));
+
+    assertEq((await dayPlan()).length, 0, "day-burst notifications are scheduled with no burst running");
+    assert(await p.evaluate(() => Native.ourId(500) && Native.ourId(511)),
+      "500-511 is not claimed by ourId — the range would never be cancelled");
+    assert(!(await p.evaluate(() => Native.ourId(512))), "ourId over-claims past 511");
+
+    // spy on the reschedule call site (the 4f2 pattern)
+    await p.evaluate(() => {
+      window.__resched = 0;
+      window.__orig = Native.rescheduleNotifications;
+      Native.rescheduleNotifications = (...a) => { window.__resched++; return window.__orig.apply(Native, a); };
+    });
+
+    await p.locator("#pane-quests .focus-card button", { hasText: "Burst" }).click();
+    await p.waitForTimeout(250);
+    assert(await p.evaluate(() => window.__resched > 0), "starting a burst did not reschedule notifications");
+    assertEq(await p.locator("#pane-quests .burst-strip").count(), 1, "no live-burst strip on the board");
+
+    const live = await dayPlan();
+    assert(live.length >= 1, "a live burst scheduled no cadence ping");
+    const now = await p.evaluate(() => Date.now());
+    for (const n of live) {
+      assert(n.id >= 500 && n.id <= 511, `a burst ping landed on id ${n.id}, outside 500-511`);
+      assert(n.at > now, `a burst ping is scheduled in the past (${n.id})`);
+    }
+    assertEq(new Set(live.map(n => n.id)).size, live.length, "burst pings collide on the same id");
+    await shot(p, "16h-burst-live");
+
+    // a mission completed inside a burst chains
+    const bank = await p.evaluate(() => window.__resched);
+    await p.locator("#pane-quests .focus-card button", { hasText: "Did it" }).click();
+    await p.waitForTimeout(300);
+    await closeAnyModal(p);
+    assert(await p.evaluate(() => Store.state.dayBurst.combo === 1), "the burst did not count a chained rep");
+
+    await p.locator("#pane-quests button", { hasText: "End burst" }).click();
+    await p.waitForTimeout(250);
+    assertEq((await dayPlan()).length, 0, "ending the burst left day pings pending");
+    assertEq(await p.locator("#pane-quests .burst-strip").count(), 0, "the burst strip survived the end of the burst");
+    assert(await p.evaluate(() => window.__resched) > bank, "ending the burst did not reschedule notifications");
+    assert(!(await p.evaluate(() => Store.state.dayBurst.active)), "the burst is still marked live");
+    await p.evaluate(() => { Native.rescheduleNotifications = window.__orig; });
+  } finally { await ctx.close(); }
+});
+
+await step("16i. content lint: night words need an explicit `when`; the day pool is well formed", async () => {
+  const { ctx, p } = await freshPage(DAY_AT);
+  try {
+    const report = await p.evaluate(() => {
+      const re = /\b(club|nightclub|bar|venue|nightlife|bottle service|DJ|coat check)\b/i;
+      const untagged = [];
+      const badTerms = [], badDemos = [], longDesc = [], longStep = [], badShape = [];
+      const tiers = { 0: 0, 1: 0, 2: 0, 3: 0 };
+      let day = 0;
+      for (const q of QuestData.quests) {
+        const hay = [q.name, q.desc, q.tip].concat(q.how || []).filter(Boolean).join(" ");
+        if (re.test(hay) && !q.when) untagged.push(q.id);
+        for (const t of q.terms || []) if (!Trainer.termById(t)) badTerms.push(`${q.id}:${t}`);
+        if (q.demo && !Demos.has(q.demo)) badDemos.push(`${q.id}:${q.demo}`);
+        if ((q.when || "anytime") !== "day") continue;
+        day++;
+        tiers[q.tier] = (tiers[q.tier] || 0) + 1;
+        const w = s => String(s).trim().split(/\s+/).filter(x => /[A-Za-z0-9]/.test(x)).length;
+        if (w(q.desc) > 20) longDesc.push(`${q.id} (${w(q.desc)}w)`);
+        for (const st of q.how || []) if (w(st) > 20) longStep.push(`${q.id} (${w(st)}w)`);
+        const xpOk = q.xp === LiveEngine.TIER_XP[q.tier];
+        if (!q.ctx || !q.skill || typeof q.tier !== "number" || !xpOk || q.type !== "do") badShape.push(q.id);
+      }
+      return { untagged, badTerms, badDemos, longDesc, longStep, badShape, day, tiers };
+    });
+
+    assert(!report.untagged.length,
+      `quest(s) name night-only places with no explicit \`when\`: ${report.untagged.join(", ")}`);
+    assert(!report.badTerms.length, `dead glossary term links: ${report.badTerms.join(", ")}`);
+    assert(!report.badDemos.length, `dead demo links: ${report.badDemos.join(", ")}`);
+    assert(!report.longDesc.length, `day mission card copy over 20 words: ${report.longDesc.join(", ")}`);
+    assert(!report.longStep.length, `day mission how-step over 20 words: ${report.longStep.join(", ")}`);
+    assert(!report.badShape.length, `day mission missing when/tier/ctx/skill/ladder XP: ${report.badShape.join(", ")}`);
+    assertEq(report.day, 26, "the day pool is not 26 missions");
+    assertEq(JSON.stringify(report.tiers), JSON.stringify({ 0: 4, 1: 10, 2: 7, 3: 5 }),
+      `day pool tier spread is ${JSON.stringify(report.tiers)}, expected 4/10/7/5`);
+  } finally { await ctx.close(); }
+});
+
+await step("16j. LiveEngine is pure, shared, and Night still seeds through it", async () => {
+  const ok = await page.evaluate(() => {
+    const pool = [
+      { id: "a", tier: 1 }, { id: "b", tier: 1 }, { id: "c", tier: 2 },
+      { id: "d", tier: 2 }, { id: "e", tier: 3 }, { id: "z", tier: 0 },
+    ];
+    const seed = "fixture|night0|set0";
+    const one = LiveEngine.pickSet(pool, { tiers: [1, 1, 2, 2], rand: Store.seededRandom(seed), size: 3, exclude: [] });
+    const two = LiveEngine.pickSet(pool, { tiers: [1, 1, 2, 2], rand: Store.seededRandom(seed), size: 3, exclude: [] });
+    const exclude = ["a"];
+    LiveEngine.pickSet(pool, { tiers: [1], rand: Store.seededRandom(seed), size: 3, exclude });
+    return {
+      deterministic: one.picks.join(",") === two.picks.join(","),
+      sorted: one.picks.every((id, i, arr) =>
+        i === 0 || LiveEngine.tierOf(pool, arr[i - 1]) <= LiveEngine.tierOf(pool, id)),
+      noRescue: !one.picks.includes("z"),
+      pureExclude: exclude.join(",") === "a",
+      ladder: JSON.stringify(LiveEngine.TIER_XP) === JSON.stringify({ 0: 8, 1: 15, 2: 25, 3: 40 }),
+      combo: LiveEngine.comboBonus(1) === 0 && LiveEngine.comboBonus(3) === 10 && LiveEngine.comboBonus(99) === 25,
+      clock: LiveEngine.fmtClock(247000) === "4:07" && LiveEngine.fmtClock(-5) === "0:00",
+    };
+  });
+  assert(ok.deterministic, "LiveEngine.pickSet is not deterministic for one seed");
+  assert(ok.sorted, "LiveEngine.pickSet stopped sorting easiest-first");
+  assert(ok.noRescue, "LiveEngine.pickSet rolled a tier-0 rescue");
+  assert(ok.pureExclude, "LiveEngine.pickSet mutated the caller's exclude list");
+  assert(ok.ladder, "the shared XP ladder changed");
+  assert(ok.combo, "comboBonus is not min(25, (n-1)*5)");
+  assert(ok.clock, "fmtClock stopped formatting ms as m:ss");
+
+  // Night Mode still routes its setlist through the shared engine
+  const nightSeeded = await page.evaluate(() => {
+    Store.state.night = { active: false };
+    Store.save();
+    NightMode.render();
+    NightMode.start();
+    const a = Store.state.night.setlist.join(",");
+    Store.state.night.setNo = 0;
+    Store.state.night.usedIds = [];
+    NightMode.render();
+    return { a, len: Store.state.night.setlist.length };
+  });
+  assertEq(nightSeeded.len, 3, "Night Mode's setlist is no longer 3 after the extraction");
+  assert(nightSeeded.a.length > 5, "Night Mode produced an empty setlist through LiveEngine");
+  await page.evaluate(() => { Store.state.night = { active: false }; Store.save(); });
 });
 
 /* ---------- summary ---------- */

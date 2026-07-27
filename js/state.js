@@ -48,6 +48,7 @@ const Store = (() => {
     analyses: [],              // saved transcript analysis summaries (small)
     gridPlacements: [],        // [{w,c,ts}] warmth×competence self-placements (0-10)
     customQuests: [],          // user-authored quests
+    dayBurst: { active: false },   // opt-in day burst; nothing runs unless started
     settings: {
       apiKey: "",                 // web only — the iOS wrap keeps it in the Keychain
       model: "claude-opus-5",
@@ -56,6 +57,8 @@ const Store = (() => {
       // Night Mode remembers its cadence so starting a shift costs zero choices.
       // day/shifts count the shifts started today — the setlist seed uses it.
       night: { interval: 12, level: 2, day: null, shifts: 0 },
+      // Day Mode's opt-in burst. Nothing here schedules anything on its own.
+      day: { burstMins: 30, lastBurstDay: null, bursts: 0 },
     },
   });
 
@@ -72,6 +75,7 @@ const Store = (() => {
       loaded.settings = Object.assign({}, defSettings, loaded.settings || {});
       loaded.settings.notifs = Object.assign({}, defSettings.notifs, loaded.settings.notifs || {});
       loaded.settings.night = Object.assign({}, defSettings.night, loaded.settings.night || {});
+      loaded.settings.day = Object.assign({}, defSettings.day, loaded.settings.day || {});
       // Migration for saves from before the rep-streak rework
       if (loaded.bestStreak < loaded.streak) loaded.bestStreak = loaded.streak;
       if (!loaded.lastRepDay && loaded.lastActiveDay) loaded.lastRepDay = loaded.lastActiveDay;
@@ -89,6 +93,20 @@ const Store = (() => {
   // ---------- time helpers ----------
   function todayKey() {
     const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
+  // The night window. Night-tagged content shows only inside it; day content
+  // is never gated — a club prompt at 1pm is wrong, a cafe mission at 11pm is
+  // merely an odd hour to do it. One-directional complaint, one-directional fix.
+  function isNightHour() {
+    const h = new Date().getHours();
+    return h >= 17 || h < 4;
+  }
+
+  // A shift that crosses midnight keeps ONE key: shift the clock back 6h.
+  function nightKey() {
+    const d = new Date(Date.now() - 6 * 60 * 60 * 1000);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   }
 
@@ -183,7 +201,7 @@ const Store = (() => {
 
   return {
     get state() { return s; },
-    save, todayKey, weekKey, seededRandom, daysSince,
+    save, todayKey, weekKey, seededRandom, daysSince, isNightHour, nightKey,
     addXp, xpForLevel, levelTitle, logRep, awardBadge,
     reset() { s = defaults(); save(); },
   };

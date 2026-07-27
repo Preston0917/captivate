@@ -1797,6 +1797,9 @@ var CaptivateContent = {
     // --- Boss quests ---
     {
       id: "cap-q-boss-room",
+      // The one genuinely night-flavoured quest in the book pool: door, Start
+      // Zone, bar-end sweet spots, one real event. Gated to 17:00-04:00.
+      when: "night",
       name: "BOSS: Work the Room",
       desc: "At one real event, run the full first-5-minutes gauntlet: skip the Start Zone, hold two sweet spots, deploy one sparker, find three commonalities with someone new, and make one raving introduction.",
       icon: "👑",
