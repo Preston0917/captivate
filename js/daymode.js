@@ -22,6 +22,11 @@ const DayMode = (() => {
   // preference for this render, and it resets to "first unfinished".
   let focusOverride = null;
 
+  // The burst strip's live countdown. Mirrors nightmode.js's uiTimer: one
+  // handle, cleared on every render and re-armed only while the pane is on
+  // screen and a burst is actually live.
+  let uiTimer = null;
+
   function cfg() {
     const s = Store.state;
     if (!s.settings.day) s.settings.day = { burstMins: 30, lastBurstDay: null, bursts: 0 };
@@ -162,14 +167,32 @@ const DayMode = (() => {
     });
   }
 
+  // Time and combo are two different facts — each stays its own stable
+  // token instead of a trailing word that means "left" one render and
+  // "×2" the next.
   function burstStrip() {
+    clearInterval(uiTimer);
+    uiTimer = null;
     if (!active()) return null;
     const b = burst();
-    const strip = UI.el("div", { class: "card burst-strip", style: "border-color:var(--good)" }, [
-      UI.el("span", { class: "burst-dot", text: "▶" }),
-      UI.el("span", { class: "burst-left", text: LiveEngine.fmtClock(b.endsAt - Date.now()) }),
-      UI.el("span", { class: "burst-say", text: b.combo > 1 ? `×${b.combo}` : "left" }),
-    ]);
+    const clock = UI.el("span", { class: "burst-left", text: `${LiveEngine.fmtClock(b.endsAt - Date.now())} left` });
+    const kids = [UI.el("span", { class: "burst-dot", text: "▶" }), clock];
+    if (b.combo > 1) kids.push(UI.el("span", { class: "chip combo", text: `×${b.combo} combo` }));
+    const strip = UI.el("div", { class: "card burst-strip", style: "border-color:var(--good)" }, kids);
+
+    uiTimer = setInterval(() => {
+      const pane = document.getElementById("pane-quests");
+      if (!pane || !pane.classList.contains("active")) { clearInterval(uiTimer); uiTimer = null; return; }
+      const b2 = burst();
+      if (!b2.active) { clearInterval(uiTimer); uiTimer = null; return; }
+      const left = b2.endsAt - Date.now();
+      // A lapsed burst closes itself right here instead of waiting for the
+      // next render to notice (DayMode.tick() is the same check, but only
+      // runs when something else triggers a re-render).
+      if (left <= 0) { clearInterval(uiTimer); uiTimer = null; endBurst(true); return; }
+      clock.textContent = `${LiveEngine.fmtClock(left)} left`;
+    }, 1000);
+
     return strip;
   }
 

@@ -1514,6 +1514,24 @@ await step("16e. day board budgets: ≤12 taps / ≤180 words / ≤1500px; focus
     assert(words <= 180, `the Today board carries ${words} words collapsed (cap is 180)`);
     assert(height <= 1500, `the Today board is ${height}px collapsed (cap is 1500)`);
 
+    // "More quests ▾" is the last control on a long board — at rest (the
+    // natural scroll position once you've read to the bottom, same idiom as
+    // the §9d tab-bar clearance check) its center must hit the button
+    // itself, not the floating capsule sitting on top of it.
+    const moreClearance = await p.evaluate(async () => {
+      scrollTo(0, document.body.scrollHeight);
+      await new Promise(r => setTimeout(r, 200));
+      const btn = [...document.querySelectorAll("#pane-quests .disclose")]
+        .find(b => b.textContent.includes("More quests"));
+      const r = btn.getBoundingClientRect();
+      const cx = r.x + r.width / 2, cy = r.y + r.height / 2;
+      const hit = document.elementFromPoint(cx, cy);
+      return { hitIsButton: hit === btn || btn.contains(hit), hitTag: hit ? (hit.className || hit.tagName) : null };
+    });
+    assert(moreClearance.hitIsButton,
+      `"More quests ▾" is covered by the tab bar at rest — elementFromPoint hit "${moreClearance.hitTag}" instead`);
+    await p.evaluate(() => scrollTo(0, 0));
+
     const fcTaps = await countTappables(p, "#pane-quests .focus-card");
     const fcWords = await countWords(p, "#pane-quests .focus-card", [".fc-text", ".say-chip"]);
     assert(fcTaps <= 5, `the focus card shows ${fcTaps} tappables (cap is 5)`);
@@ -1633,6 +1651,17 @@ await step("16h. burst lifecycle: ids 500-511 exist only while a burst is live",
       assert(n.at > now, `a burst ping is scheduled in the past (${n.id})`);
     }
     assertEq(new Set(live.map(n => n.id)).size, live.length, "burst pings collide on the same id");
+
+    // the countdown actually ticks, and the "left" label stays stable —
+    // it's a separate, unchanging token from the (absent, no chain yet) combo
+    const beforeTick = await p.locator("#pane-quests .burst-left").innerText();
+    assert(/^\d+:\d{2} left$/.test(beforeTick), `burst clock copy is not "MM:SS left" (got "${beforeTick}")`);
+    assertEq(await p.locator("#pane-quests .chip.combo").count(), 0, "a combo chip appeared with no chain yet");
+    await p.clock.fastForward(65000);
+    await p.waitForTimeout(500);
+    const afterTick = await p.locator("#pane-quests .burst-left").innerText();
+    assert(afterTick !== beforeTick, `burst countdown did not tick (still "${afterTick}")`);
+    assert(/^\d+:\d{2} left$/.test(afterTick), `burst clock copy lost its stable "left" label (got "${afterTick}")`);
     await shot(p, "16h-burst-live");
 
     // a mission completed inside a burst chains
